@@ -167,40 +167,71 @@ A short, explicit explanation the agent reads when invoked:
 > **`output_path`** — Absolute path to the directory where
 > `ranking.json` and `ranking.md` must be written. Do not write anywhere else.
 
-## 6. Skill discovery in the container (no runtime copies, no plugin yet)
+## 6. Skill discovery in the container (runtime copy into `.claude/skills/`)
 
 The Agent SDK's skill discovery looks at `.claude/skills/` inside `cwd` and
-its ancestors. Our canonical location is `skills/`. We bridge the two with
-a **symlink set up at image build time** — no runtime copies, single source
-of truth.
+its ancestors. The two skill sources are:
 
-Inside the container:
+- The repo's `skills/` directory — contains exactly one skill, `venue-matcher`
+- Zero or more user-provided `extra_skill_dirs` — searched by `extra_skill_names`
+
+At **runtime** (container startup, before any worker fires), the entrypoint
+populates `/app/.claude/skills/` by copying:
+
+1. `skills/venue-matcher/` → `.claude/skills/venue-matcher/`
+2. For each name in `extra_skill_names`: find it in `extra_skill_dirs`,
+   copy the resolved directory into `.claude/skills/<name>/`
+
+After staging, the container looks like:
 
 ```
 /app/
-├── skills/                        # real files, copied from the repo at build
-│   ├── venue-matcher/             # always present
-│   └── <selected_extras>/         # baked in at build, see §7
+├── skills/                       # source files (only venue-matcher; never mutated)
+│   └── venue-matcher/
 └── .claude/
-    └── skills/  →  ../skills/     # symlink, created at build
+    └── skills/                   # runtime staging area, rebuilt every run
+        ├── venue-matcher/        # copy of /app/skills/venue-matcher/
+        └── <selected_extra>/     # copy of <extra_dir>/<name>/
 ```
 
-The SDK is launched with `cwd=/app`; it walks up from cwd looking for
-`.claude/skills/`, finds the symlink, and discovers every skill living in
-`/app/skills/`. No copies happen at runtime; the only mutation is the build-
-time `ln -s`.
+The SDK is launched with `cwd=/app`; it discovers every skill under
+`/app/.claude/skills/`.
 
-This honors the rule: **`.claude/skills/` is never a runtime copy target.**
-It is a single symlink, created once at build, pointing at the canonical
-`skills/` dir.
+**Why copy and not symlink:**
+- Cross-platform safety (Windows containers don't reliably follow symlinks).
+- The image stays generic — no user-specific extras baked in.
+- The entrypoint can resolve `(extra_skill_dirs, extra_skill_names)` per run
+  and fail fast on conflicts.
 
-## 7. Extra skills as build-time dependencies
+**Source of truth:** `skills/` in git. `.claude/skills/` is ephemeral
+runtime state, never committed, rebuilt fresh each container start.
 
-Extras are dependencies — like pip packages, they're locked into the image
-at build time, not bolted on at runtime. This makes the running image
-hermetic.
+## 7. Extra skills as runtime dependencies
 
-### 7.1 Local config
+Extras are user-provided dependencies, resolved at container startup, not
+baked into the image. The image stays generic; users (or the orchestrator)
+supply extras at run-time via CLI flags or a local config file.
+
+### 7.1 The resolution algorithm
+
+`extra_skill_dirs` is a **search path**. `extra_skill_names` is an explicit
+**allowlist** — only the named skills are pulled. The user never says "grab
+everything in this directory".
+
+```
+for name in extra_skill_names:
+    matches = [d for d in extra_skill_dirs if (d/name/SKILL.md).exists()]
+    if not matches:          warn  ("requested skill '<name>' not found in any extra dir")
+    elif len(matches) > 1:   fatal ("'<name>' found in multiple extra dirs — conflict")
+    elif name == "venue-matcher": fatal ("'<name>' conflicts with the main skill")
+    else:                    copy matches[0] -> /app/.claude/skills/<name>/
+```
+
+The orchestrator runs this *before* dispatching any worker. Fatal errors
+abort the whole run; warnings are logged and the run continues without the
+missing extra.
+
+### 7.2 Local config
 
 `.paperflow.local.toml` (gitignored) holds the user's per-machine extras:
 
@@ -211,33 +242,22 @@ dirs  = ["/home/risp3mg/.claude/plugins/marketplaces/knowledge-work-plugins/cust
 names = ["customer-research"]   # only the names listed are pulled
 ```
 
-CLI flags `--extra-skills-dir` and `--extra-skill-name` override the file at
-build time.
+CLI flags `--extra-skills-dir` and `--extra-skill-name` override the config
+file at run time.
 
-### 7.2 Pre-build validation
+### 7.3 Validation invocation
 
-Before `docker build` runs, a validation script runs. It:
+Validation is a CLI subcommand a user can run on demand to check their
+config without launching the SDK:
 
-1. Resolves each `(dir, name)` pair to an actual `SKILL.md` location.
-2. **Fatal-errors** on:
-   - any requested name that doesn't exist in its dir
-   - any name collision with `skills/venue-matcher/` or with another extra
-3. **Warns** on:
-   - dirs that don't exist
-   - extras with `disable-model-invocation: true` (they won't run unless the
-     agent's prompt explicitly invokes them)
-
-This validation is invoked from the `Makefile`:
-
-```makefile
-build: validate
-	docker compose build
-
-validate:
-	python batch_venue_matcher/cli.py validate-skills
+```
+python -m batch_venue_matcher.cli validate-skills
 ```
 
-### 7.3 Build-time selection on this machine
+The container's normal `run` entrypoint invokes the same validation step
+before staging, so an invalid config aborts before any agent spawns.
+
+### 7.4 Selection on this machine
 
 Survey of installed plugin skills (knowledge-work-plugins,
 claude-plugins-official, superpowers-marketplace) at the time of writing:
@@ -261,24 +281,25 @@ FROM python:3.12-slim
 
 WORKDIR /app
 
-# build deps
+# install package metadata first for better layer caching
 COPY batch_venue_matcher/pyproject.toml /app/batch_venue_matcher/
 RUN pip install --no-cache-dir -e /app/batch_venue_matcher
 
-# code + skill
+# copy the app code and the skill source files
 COPY batch_venue_matcher/ /app/batch_venue_matcher/
 COPY skills/ /app/skills/
 
-# extras: baked in at build by a pre-build hook (see §7)
-COPY .paperflow.local.toml* /app/   # optional, gitignored
-RUN python /app/batch_venue_matcher/cli.py bake-extras
-
-# discovery symlink (single source of truth: /app/skills/)
-RUN mkdir -p /app/.claude && ln -sf /app/skills /app/.claude/skills
+# .paperflow.local.toml (gitignored) is OPTIONALLY mounted at runtime,
+# not baked into the image — keeps the image generic.
 
 ENV PYTHONUNBUFFERED=1
 ENTRYPOINT ["python", "-m", "batch_venue_matcher.cli", "run"]
 ```
+
+The image has **no skill staging step at build time**. Skill staging happens
+inside the entrypoint, at container startup, after the orchestrator has
+read the local config and CLI flags. This keeps the image hermetic of user
+choices.
 
 ### 8.2 docker-compose
 
@@ -306,19 +327,23 @@ services:
 ```makefile
 .PHONY: build run validate
 
-build: validate
+build:
 	docker compose build
 
-validate:
-	python batch_venue_matcher/cli.py validate-skills
+# Standalone validation: resolves extras, checks conflicts, exits without
+# launching any agent. Useful after editing .paperflow.local.toml.
+validate: build
+	docker compose run --rm matcher validate-skills
 
 run: build
 	docker compose run --rm matcher
 ```
 
-End-user surface is **two commands**: `make run` (which handles everything),
-or `make build && make run` if explicit. Resource sizing happens automatically
-inside the container.
+End-user surface is **one command**: `make run` (which builds if needed and
+runs). `make validate` is the standalone check for the local extras config.
+Resource sizing happens automatically inside the container. The `run`
+entrypoint always validates first, so a bad config aborts before any
+agent spawns.
 
 ## 9. SDK call (per worker)
 
