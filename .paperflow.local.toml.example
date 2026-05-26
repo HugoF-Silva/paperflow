@@ -1,0 +1,10 @@
+# Per-machine local config for the batch venue matcher.
+# Copy to .paperflow.local.toml (gitignored) and customize.
+#
+# `dirs` is a search path; `names` is an explicit allowlist.
+# Only the named skills are pulled. If a name is found in multiple dirs,
+# the run aborts with a conflict error.
+
+[extras]
+dirs  = []
+names = []

@@ -1,0 +1,28 @@
+# env
+.env
+.env.local
+
+# local extras config (per-machine, not in git)
+.paperflow.local.toml
+
+# runtime artifacts
+results/
+.runtime/
+.claude/
+
+# python build artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+*.egg
+build/
+dist/
+.venv/
+venv/
+.mypy_cache/
+.pytest_cache/
+.ruff_cache/
+
+# OS
+.DS_Store
+Thumbs.db
