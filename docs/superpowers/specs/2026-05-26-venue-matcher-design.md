@@ -2,92 +2,89 @@
 
 **Date:** 2026-05-26
 **Owner:** Hugo Fernandes (hugo.fernandes@discente.ufg.br)
-**Status:** Draft for review
+**Status:** Draft for review (rev 2 — incorporates containerization, flat layout, composition root, simpler CLI, symlink-based skill discovery, "no false promise" pressure)
 
 ## 1. Purpose
 
-For a given academic paper (`.docx`), produce a ranked list of publication venues
-the paper truly belongs to, separated into two buckets:
+For a given academic paper (`.docx`), produce a ranked list of publication
+venues the paper truly belongs to, split into:
 
-- **Open now** — accepting submissions today
-- **Opening soon** — registration opens within `now + soon_days` (default 31)
+- **open_now** — accepting submissions today
+- **opening_soon** — registration opens within `now + soon_days` (default 31)
 
-The system has two artifacts:
+Two artifacts, separate concerns:
 
-1. **A shareable skill** (`skills/venue-matcher/`) that drives the matching of a
-   single paper. Plugin-shaped on disk so it can be packaged and distributed later.
-2. **A local-only batch app** (`batch_venue_matcher/`) that processes many papers
-   in parallel by spawning per-paper Agent SDK agents that invoke the same skill.
+1. **A shareable skill** (`skills/venue-matcher/`) that drives matching for a
+   single paper. Plugin-shape on disk so it can be packaged and distributed later.
+2. **A local-only, containerized batch app** (`batch_venue_matcher/`) that
+   processes many papers in parallel by spawning per-paper Agent SDK agents
+   that invoke the skill.
 
-The skill is the "brain"; the batch app is "industrial scale" on top of it.
+The skill is the brain. The app is industrial scale on top of it.
 
 ## 2. Non-goals
 
-- **No plugin distribution in this scope.** The repo is laid out plugin-ready,
-  but `.claude-plugin/plugin.json` is intentionally **not** added yet.
-- **No template adaptation.** A separate (future) repo handles formatting the paper
-  to a venue's template.
-- **No web UI.** Batch app is CLI-only.
-- **No within-iteration quality polishing across outer loops.** The agent's
-  neuroticism *inside* a single iteration is the quality bar; outer iterations
-  exist only to recover from clear failures (see §8).
+- **No plugin distribution in this scope.** Repo laid out plugin-ready, but
+  `.claude-plugin/plugin.json` is intentionally not in git yet.
+- **No template adaptation.** A future repo handles formatting to a venue's
+  template.
+- **No web UI.** App is CLI-only, run inside Docker.
+- **No within-iteration quality polishing.** The agent's neuroticism *inside*
+  a single iteration is the quality bar; outer iterations exist only to
+  recover from deterministic failures (see §9).
 
 ## 3. Inputs and parameters
 
 | Parameter | Default | Notes |
 |---|---|---|
-| paper input | required | `.docx` (PT-BR or EN content) |
-| `soon_days` | `31` | Registration opens after `today + soon_days` is "too far" — ruled out |
-| `countries` | `["BR"]` | Comma-separated ISO-3166 codes; English-accepting non-BR venues still bonus-scored |
-| `extra_skills_dir` | `[]` | Additional skill directories staged into `.claude/skills/` (repeatable) |
-| `max_parallel` | `auto` | Worker pool size; `auto` uses available-resource sizing (see §7) |
-| `max_iterations` | `8` | Hard safety net for the outer ralph-loop |
-| `per_worker_mb` | `800` | Conservative memory estimate per worker, for pool sizing |
+| `--input-dir` | required | Directory of `.docx` papers |
+| `--output-dir` | required | Where rankings get written |
+| `--soon-days` | `31` | "Opening soon" upper bound |
+| `--countries` | `BR` | Comma-separated ISO-3166 codes |
+| `--max-parallel` | `auto` | Upper bound on workers; `auto` = derive from available CPU/RAM |
+| `--max-iterations` | `8` | Hard safety net for the outer ralph-style loop |
+| `--extra-skills-dir` | `[]` | Path(s) holding additional skills, outside the repo; repeatable |
+| `--extra-skill-name` | `[]` | Name(s) of specific skills to take from `--extra-skills-dir`; repeatable |
 
-## 4. Repository layout
+Intentionally removed:
+- ~~`--per-worker-mb`~~ — humility over hubris. We probe what's available and
+  trust it. No knob for the user to misconfigure.
+
+## 4. Repository layout (flat, no `__init__.py`, no `src/<package>/` nesting)
 
 ```
 paperflow/
-├── skills/                            # canonical skill location (plugin-shape, in git)
+├── skills/                          # canonical skill location (in git)
 │   └── venue-matcher/
-│       ├── SKILL.md                   # 1500–2000 words, neurotic-curator guidance
+│       ├── SKILL.md                 # 1500–2000 words, neurotic-curator guidance
 │       └── references/
-│           ├── search-paranoia.md     # what counts as obsessive vs. lazy search
-│           ├── venue-anatomy.md       # what to extract from a venue's CFP page
-│           └── brazilian-ecosystems.md# SBC, RBIE, SBPO, Embrapii, IEEE LATAM, etc.
-├── batch_venue_matcher/               # local Agent SDK app
+│           ├── search-paranoia.md
+│           ├── venue-anatomy.md
+│           └── brazilian-ecosystems.md
+├── batch_venue_matcher/             # local Agent SDK app (containerized)
 │   ├── pyproject.toml
-│   ├── README.md
-│   └── src/batch_venue_matcher/
-│       ├── __init__.py
-│       ├── cli.py                     # argparse / typer entrypoint
-│       ├── orchestrator.py            # multiprocessing pool, sizing, failure log
-│       ├── worker.py                  # per-paper SDK agent + ralph-style outer loop
-│       ├── skill_staging.py           # idempotent copy of skills/ → .claude/skills/
-│       ├── resources.py               # CPU/memory probing for pool sizing
-│       └── docx.py                    # docx → plain text (python-docx)
-├── .claude/                           # gitignored runtime staging area
-│   └── skills/                        #   ← runtime copy of ../skills/
+│   ├── Dockerfile
+│   ├── docker-compose.yml
+│   ├── Makefile
+│   ├── cli.py                       # argparse entry; thin
+│   ├── compose.py                   # composition root: assembles object graph
+│   ├── orchestrator.py              # Orchestrator class (pool + dispatch)
+│   └── worker.py                    # Worker class (per-paper SDK call + outer loop + docx parsing)
 ├── docs/
-│   └── superpowers/specs/             # design specs
-├── input_examples/                    # already exists
-├── .gitignore                         # ignores .claude/, results/, .runtime/, build artifacts
+│   └── superpowers/specs/
+├── input_examples/
+├── .paperflow.local.toml.example    # template for local extras config (gitignored real file)
+├── .gitignore                       # ignores .paperflow.local.toml, results/, .runtime/
 ├── CLAUDE.md
 └── README.md
 ```
 
-### Source-of-truth strategy
-
-- **In git:** `skills/venue-matcher/` (plugin-shape; the artifact teammates will
-  eventually install via plugin).
-- **At runtime:** `batch_venue_matcher` copies `skills/*` → `.claude/skills/*`
-  before launching workers. The copy is idempotent (replaces, doesn't append).
-- `.claude/` is gitignored.
-
-This dual location keeps a single source of truth in git while satisfying the
-Agent SDK's hardcoded skill-discovery path (`.claude/skills/`). When we later
-add `.claude-plugin/plugin.json` to distribute as a plugin, the canonical
-`skills/` dir is already in the right place.
+**Notes:**
+- No `__init__.py` anywhere. Python 3.12 namespace packages handle imports.
+- Skill files live exactly once in git: `skills/venue-matcher/`. There is no
+  duplicate at `.claude/skills/`. See §6 for how the SDK discovers them.
+- Four `.py` files in the app (`cli`, `compose`, `orchestrator`, `worker`).
+  `docx` parsing is inlined in `worker.py` since it's small and only used there.
 
 ## 5. The skill: `skills/venue-matcher/SKILL.md`
 
@@ -96,246 +93,378 @@ add `.claude-plugin/plugin.json` to distribute as a plugin, the canonical
 ```yaml
 ---
 name: venue-matcher
-description: Find the publication venue(s) where a given academic paper truly belongs. Reads the paper, runs deep judgmental web search, fetches and reads each candidate venue's CFP, and returns a fit-ranked output split into "open now" and "opening soon" buckets. Use only when explicitly invoked via /venue-matcher <paper-path>.
+description: Find the publication venue(s) where a given academic paper truly belongs. Reads the paper, runs deep judgmental web search, fetches and reads each candidate venue's CFP, and returns a fit-ranked output split into "open now" and "opening soon" buckets. Use only when explicitly invoked via /venue-matcher.
 disable-model-invocation: true     # never auto-triggers; user-only
 user-invocable: true               # default; triggered via /venue-matcher
 ---
 ```
 
-`disable-model-invocation: true` keeps this skill out of the model's
-auto-invocation surface — it does not pollute attention for unrelated agent work.
-The only way to trigger it is the explicit `/venue-matcher` slash command.
+`disable-model-invocation: true` keeps the skill out of the model's
+auto-invocation surface so it doesn't pollute attention for unrelated work.
+Only `/venue-matcher` in the user prompt triggers it.
 
 ### 5.2 Body outline (imperative, neurotic-curator tone)
 
-1. **Mindset** — the agent is a paranoid curator. The search is oriented from
-   query one toward *recognition of fit*. No counts, no quotas.
-2. **Inputs** — paper path, plus optional flags from `$ARGUMENTS`:
-   `--soon-days`, `--countries`, `--out`.
-3. **Stage A — Read the paper.** Extract title, abstract, contribution, methods,
-   real-world application, language(s). Write a one-paragraph "what this paper
-   IS, what it ISN'T" statement to working notes.
-4. **Stage B — Discover candidate venues.** Spawn 2–4 parallel `Explore`
+1. **Mindset** — paranoid curator. Search is oriented from query one toward
+   *recognition of fit*. No counts, no quotas.
+2. **Inputs** — natural-language user prompt provides:
+   - paper file path
+   - search constraints (soon-days, countries)
+   - output path
+   - the explicit instruction to use `/venue-matcher`
+   The skill body **explains what each constraint means** (see §5.4) so the
+   agent treats them as real web-search constraints, not opaque flags.
+3. **Stage A — Read the paper.** Extract title, abstract, contribution,
+   methods, real-world application, language. Write a one-paragraph "what this
+   paper IS / what it ISN'T" statement.
+4. **Stage B — Discover candidate venues.** Spawn 2–4 parallel `Agent`
    subagents, each with a *narrow* angle (niche keyword + country, broader
    keyword + country, language-targeted, conference/journal/magazine/track).
    Subagents return URL lists, never verdicts.
 5. **Stage C — Read every candidate.** For each URL, `WebFetch` the CFP/about
-   page. Extract: accepted topics, audience, constraints, registration deadline,
-   language(s), country, indexing. Compare against the paper's IS/ISN'T
-   statement. Decide: real candidate, weak candidate, or ruled out. Write
-   rationale. **Search snippets are never sufficient.**
+   page. Extract: accepted topics, audience, constraints, registration
+   deadline, language(s), country, indexing. Compare against the paper's
+   IS/ISN'T statement. Decide real candidate, weak candidate, or ruled out.
+   Write rationale. **Search snippets are never sufficient.**
 6. **Stage D — Bucket and rank.** Split survivors into `open_now` and
-   `opening_soon` (registration deadline within `now + soon_days`). Rank by fit
-   DESC within each bucket. Tie-breaks: language match → country match → niche
-   specificity → "vibes" (allowed, but must include a one-line reason).
+   `opening_soon` (registration deadline within `now + soon_days`). Rank by
+   fit DESC. Tie-breaks: language match → country match → niche specificity →
+   "vibes" (allowed, but must include a one-line reason).
 7. **Stage E — Recognize the fit.** Keep weighing "is this where the paper
-   belongs?" If recognition arrives early, stop. If after thorough searching
-   nothing strongly clicks, return the closest survivors with an honest note;
-   **never come back empty-handed**, but **never embellish a weak fit**.
+   belongs?" Stop on recognition, however early or late. If nothing strongly
+   clicks after honest, thorough searching, name the closest survivors and
+   say so plainly. Never come back empty-handed; never embellish a weak fit.
 8. **Output contract** — write `ranking.json` and `ranking.md` to the path
-   given by `--out=`. Then emit exactly `<promise>VENUE-MATCH-COMPLETE</promise>`
-   in the final assistant message.
+   given in the user prompt, then emit `<promise>VENUE-MATCH-COMPLETE</promise>`
+   as the final text of the final message. See §11 for the JSON shape.
 
 ### 5.3 References (progressive disclosure)
 
-- **`references/search-paranoia.md`** — concrete examples of lazy-vs-obsessive
-  search so the agent can self-detect laziness.
-- **`references/venue-anatomy.md`** — the exact fields to extract from a venue's
-  site, and what to do when fields are ambiguous (especially deadlines).
+- **`references/search-paranoia.md`** — concrete examples of
+  lazy-vs-obsessive search so the agent can self-detect laziness.
+- **`references/venue-anatomy.md`** — exact fields to extract from a venue's
+  CFP page; what to do when fields are ambiguous (especially deadlines).
 - **`references/brazilian-ecosystems.md`** — starting map of major BR venues
   across CS/IT: SBC portfolio (SBES, SBBD, SBIE, SBSI, …), IEEE LATAM, RBIE,
   REIT, SBPO, Embrapii's publication channels, magazines like *Computação
   Brasil*, etc.
 
-## 6. The batch app: `batch_venue_matcher/`
+### 5.4 Constraint vocabulary (a section in `SKILL.md`)
 
-### 6.1 CLI
+A short, explicit explanation the agent reads when invoked:
+
+> **`soon_days`** — Reject any venue whose registration opens AFTER
+> `today + soon_days`. Treat venues whose registration opens before that bound
+> as "opening_soon"; venues already open as "open_now". This bound is the
+> user's tolerance for waiting.
+>
+> **`countries`** — Comma-separated ISO-3166 alpha-2 country codes (default
+> `BR`). Strongly prefer venues with primary affiliation in these countries.
+> Venues outside the list are not banned, but they need much stronger
+> thematic fit to outrank a same-country venue, and they only stay if they
+> accept the paper's language (PT-BR or EN).
+>
+> **`output_path`** — Absolute path to the directory where
+> `ranking.json` and `ranking.md` must be written. Do not write anywhere else.
+
+## 6. Skill discovery in the container (no runtime copies, no plugin yet)
+
+The Agent SDK's skill discovery looks at `.claude/skills/` inside `cwd` and
+its ancestors. Our canonical location is `skills/`. We bridge the two with
+a **symlink set up at image build time** — no runtime copies, single source
+of truth.
+
+Inside the container:
 
 ```
-batch-venue-matcher \
-  --input-dir ./papers/ \
-  --output-dir ./results/ \
-  --soon-days 31 \
-  --countries BR \
-  --max-parallel auto \
-  --max-iterations 8 \
-  --per-worker-mb 800 \
-  --extra-skills-dir /some/external/path     # repeatable
-  --keep-runtime                              # debug: do not clean .runtime/
+/app/
+├── skills/                        # real files, copied from the repo at build
+│   ├── venue-matcher/             # always present
+│   └── <selected_extras>/         # baked in at build, see §7
+└── .claude/
+    └── skills/  →  ../skills/     # symlink, created at build
 ```
 
-### 6.2 Startup flow
+The SDK is launched with `cwd=/app`; it walks up from cwd looking for
+`.claude/skills/`, finds the symlink, and discovers every skill living in
+`/app/skills/`. No copies happen at runtime; the only mutation is the build-
+time `ln -s`.
 
-1. Validate inputs; discover papers in `--input-dir` (`.docx` only for now).
-2. Probe machine resources (see §7), choose worker count, **print the math**.
-3. **Stage skills.** Copy `skills/*` → `.claude/skills/*` (idempotent). For each
-   `--extra-skills-dir`, copy its contents into `.claude/skills/` too. Conflicts
-   on the same skill name: extra dirs win, then warn.
-4. Initialize the multiprocessing pool.
-5. For each paper, dispatch one worker job.
+This honors the rule: **`.claude/skills/` is never a runtime copy target.**
+It is a single symlink, created once at build, pointing at the canonical
+`skills/` dir.
 
-### 6.3 Per-worker pipeline (one paper)
+## 7. Extra skills as build-time dependencies
 
-1. Convert `.docx` to plain text via `docx.py` (python-docx). Write to
-   `.runtime/<paper-stem>/paper.txt`.
-2. Compose user prompt:
-   ```
-   /venue-matcher <abs-path-to-paper.txt> --soon-days=<N> --countries=<list> --out=<results/<paper-stem>/>
-   ```
-3. Invoke SDK with the lean system prompt (§6.4) and run a streaming `query()`.
-4. After the stream ends, check for the completion promise and the expected
-   output files. Outer-loop decision is in §8.
-5. On success or exhausted iterations: write a one-line summary to
-   `results/<paper-stem>/iteration.log`. Cleanup `.runtime/<paper-stem>/`
-   unless `--keep-runtime` is set.
+Extras are dependencies — like pip packages, they're locked into the image
+at build time, not bolted on at runtime. This makes the running image
+hermetic.
 
-### 6.4 SDK call (per worker)
+### 7.1 Local config
+
+`.paperflow.local.toml` (gitignored) holds the user's per-machine extras:
+
+```toml
+# .paperflow.local.toml — gitignored, per-machine
+[extras]
+dirs  = ["/home/risp3mg/.claude/plugins/marketplaces/knowledge-work-plugins/customer-support/skills"]
+names = ["customer-research"]   # only the names listed are pulled
+```
+
+CLI flags `--extra-skills-dir` and `--extra-skill-name` override the file at
+build time.
+
+### 7.2 Pre-build validation
+
+Before `docker build` runs, a validation script runs. It:
+
+1. Resolves each `(dir, name)` pair to an actual `SKILL.md` location.
+2. **Fatal-errors** on:
+   - any requested name that doesn't exist in its dir
+   - any name collision with `skills/venue-matcher/` or with another extra
+3. **Warns** on:
+   - dirs that don't exist
+   - extras with `disable-model-invocation: true` (they won't run unless the
+     agent's prompt explicitly invokes them)
+
+This validation is invoked from the `Makefile`:
+
+```makefile
+build: validate
+	docker compose build
+
+validate:
+	python batch_venue_matcher/cli.py validate-skills
+```
+
+### 7.3 Build-time selection on this machine
+
+Survey of installed plugin skills (knowledge-work-plugins,
+claude-plugins-official, superpowers-marketplace) at the time of writing:
+**none align with academic venue matching**. The closest matches
+(`enterprise-search:search`, `customer-research`, `account-research`,
+`competitive-brief`) are for company-internal sources or commercial
+intelligence, not for searching the open academic web for CFPs.
+
+**Default**: zero extras configured. `.paperflow.local.toml.example` exists
+as a template; the actual `.paperflow.local.toml` is gitignored and absent
+by default.
+
+## 8. Containerization
+
+### 8.1 Docker image
+
+`Dockerfile`:
+
+```dockerfile
+FROM python:3.12-slim
+
+WORKDIR /app
+
+# build deps
+COPY batch_venue_matcher/pyproject.toml /app/batch_venue_matcher/
+RUN pip install --no-cache-dir -e /app/batch_venue_matcher
+
+# code + skill
+COPY batch_venue_matcher/ /app/batch_venue_matcher/
+COPY skills/ /app/skills/
+
+# extras: baked in at build by a pre-build hook (see §7)
+COPY .paperflow.local.toml* /app/   # optional, gitignored
+RUN python /app/batch_venue_matcher/cli.py bake-extras
+
+# discovery symlink (single source of truth: /app/skills/)
+RUN mkdir -p /app/.claude && ln -sf /app/skills /app/.claude/skills
+
+ENV PYTHONUNBUFFERED=1
+ENTRYPOINT ["python", "-m", "batch_venue_matcher.cli", "run"]
+```
+
+### 8.2 docker-compose
+
+`docker-compose.yml`:
+
+```yaml
+services:
+  matcher:
+    build: .
+    volumes:
+      - ./papers:/work/papers:ro
+      - ./results:/work/results
+    environment:
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    # default args; override at the CLI
+    command: >
+      --input-dir /work/papers
+      --output-dir /work/results
+      --soon-days 31
+      --countries BR
+```
+
+### 8.3 Makefile (the user-facing surface)
+
+```makefile
+.PHONY: build run validate
+
+build: validate
+	docker compose build
+
+validate:
+	python batch_venue_matcher/cli.py validate-skills
+
+run: build
+	docker compose run --rm matcher
+```
+
+End-user surface is **two commands**: `make run` (which handles everything),
+or `make build && make run` if explicit. Resource sizing happens automatically
+inside the container.
+
+## 9. SDK call (per worker)
 
 ```python
 options = ClaudeAgentOptions(
-    cwd="<repo>",
-    setting_sources=["project"],            # discovers .claude/skills/
-    skills=["venue-matcher"],               # filter to just this one
+    cwd="/app",
+    setting_sources=["project"],     # discovers /app/.claude/skills/
+    skills=["venue-matcher", *extra_names],
     allowed_tools=[
-        "Read","Write","Bash","Glob","Grep",
-        "WebSearch","WebFetch","Agent",
+        "Read", "Write",
+        "WebSearch", "WebFetch",
+        "Agent",                     # for narrow-angle subagents
     ],
-    system_prompt=(
-        "You are a venue-matching agent. Your only job is to find the "
-        "publication venue(s) where a specific academic paper truly belongs.\n\n"
-        "The user will invoke /venue-matcher with a paper path. Follow that "
-        "skill with neurotic care: read the paper, read each candidate venue's "
-        "actual CFP, and orient the entire search around recognizing fit — not "
-        "toward filling a quota or counter.\n\n"
-        "You stop when you recognize the venue(s) the paper genuinely belongs "
-        "to, however few or many venues that took. When you have, emit exactly:\n"
-        "<promise>VENUE-MATCH-COMPLETE</promise>\nin your final message.\n\n"
-        "You may use subagents (Agent tool) to parallelize narrow-angle searches. "
-        "WebFetch is required for any venue you intend to include — search "
-        "snippets are never sufficient."
-    ),
+    system_prompt=SYSTEM_PROMPT,     # see §9.2
     max_turns=80,
 )
 ```
 
-Notes:
-- **No `claude_code` preset.** That preset bloats context with code-editing
-  guidance unrelated to our task.
-- **`allowed-tools` in SKILL.md is ignored by the SDK** (per docs); tool access
-  is controlled here, in `allowed_tools`.
+**No** `Grep`, `Glob`, `Bash`. The agent doesn't search a codebase, doesn't
+need shell. It reads one paper, web-searches, web-fetches, writes notes
+and the final ranking. `claude_code` preset is NOT used — it would bloat
+context with code-editing instructions irrelevant here.
 
-## 7. Resource-aware concurrency
+### 9.1 User prompt (natural language, constraints explained)
 
-The pool size is determined at startup from **actually-available** resources
-(not totals), with a conservative margin so the run doesn't tip an already-busy
-machine into OOM or thrash.
-
-```python
-cpu_count   = os.cpu_count()
-cpu_used    = psutil.cpu_percent(interval=1.0)             # measured, not assumed
-cpu_free    = max(0, cpu_count * (1 - cpu_used/100))
-cpu_workers = max(1, int(cpu_free * 0.8) - 1)              # 80% of free, leave 1 CPU
-
-mem_free    = psutil.virtual_memory().available            # bytes currently free
-mem_workers = max(1, int(mem_free * 0.7 // (per_worker_mb * 1024 * 1024)))
-
-pool_size   = min(num_papers, cpu_workers, mem_workers, user_override_or_inf)
-```
-
-The CLI **prints the chosen size and the math**:
+For each paper, the worker constructs:
 
 ```
-host:    8 CPUs (12% in use right now), 16.0 GiB RAM (6.4 GiB free)
-budget:  80% of free CPU, 70% of free RAM, leave ≥1 CPU for the OS
-result:  5 workers   (capped by: mem=5, cpu=6, papers=23)
-queue:   23 papers → 5 in parallel, ~4 batches
+/venue-matcher
+
+Match publication venues for this paper: /work/papers/<basename>.docx
+
+Search constraints:
+- Today's date: 2026-05-26.
+- Open now OR opening within 31 calendar days from today. Reject anything
+  whose registration opens later than that.
+- Country preference: BR (primary). Non-BR venues are allowed only when their
+  thematic fit is markedly stronger than any BR alternative AND they accept
+  the paper's language.
+- The paper's language(s): detect from the file. Brazilian Portuguese and/or
+  English are expected.
+
+Write your final ranking to:
+- /work/results/<basename>/ranking.json
+- /work/results/<basename>/ranking.md
+
+When — and only when — you have recognized the venue(s) the paper truly
+belongs to, emit exactly this text on its own line as the LAST line of your
+final message:
+<promise>VENUE-MATCH-COMPLETE</promise>
+
+CRITICAL — do not emit a false promise:
+- The promise marks "I did the work and arrived at a genuine result".
+- It does NOT mean "I gave up" or "I'm tired" or "I think I should stop now".
+- Even if you feel stuck, the search seems impossible, or you've been
+  running for a while — you MUST NOT emit a false promise.
+- If after honest, thorough search you cannot find a strong fit, name the
+  closest survivors and explain why none strongly fit — THEN emit the promise.
+  That is a genuine result.
+- The loop watching this is designed to continue until the promise is
+  unambiguously TRUE. Trust the process.
 ```
 
-If `--max-parallel N` is passed, it is treated as an **upper bound** and is
-still clamped by `cpu_workers` and `mem_workers` — we never overcommit, even if
-the user explicitly asks. A clamp emits a warning.
+This is the agent's "do not lie to escape" pressure — borrowed directly from
+ralph-loop's prompt philosophy (you pointed to its setup script). The shape
+is the same: an explicit, repeated reminder that the promise is a TRUTH
+contract, not an EXIT button.
 
-### Multiprocessing, not threading
+### 9.2 System prompt (lean, behavioral)
 
-Python's GIL prevents true CPU parallelism for the SDK call's
-JSON-parsing/streaming work. We use `multiprocessing.Pool` (or
-`concurrent.futures.ProcessPoolExecutor`) with a `spawn` start method for
-portability and predictability.
+```
+You are a venue-matching agent. Your only job: find the publication venue(s)
+where a given academic paper truly belongs.
 
-## 8. Outer-loop iteration (failure recovery only)
+The user will invoke /venue-matcher with a paper path and search constraints.
+Follow the skill body with neurotic care: read the paper, read each candidate
+venue's actual CFP, and orient the search around recognizing fit — never
+toward filling a quota or counter. Search snippets are never sufficient
+justification for including a venue; you must WebFetch the CFP.
 
-The orchestrator re-invokes the SDK for the same paper **only on clear,
-deterministic failure**:
+Stopping condition: recognition that you've found the venue(s) the paper
+genuinely belongs to. Then, and only then, emit
+<promise>VENUE-MATCH-COMPLETE</promise> as the last line of your final message.
+
+Do not emit a false promise. Trust the process.
+```
+
+## 10. Outer-loop iteration (failure recovery only)
+
+The orchestrator re-invokes the SDK for the same paper only on clear,
+deterministic failure:
 
 1. The final assistant message does not contain
    `<promise>VENUE-MATCH-COMPLETE</promise>`.
-2. The SDK process exited with an error or crashed.
-3. Expected output files (`ranking.json`, `ranking.md`) are missing or the JSON
-   doesn't parse.
+2. SDK process exited with an error or crashed.
+3. Expected output files (`ranking.json`, `ranking.md`) are missing or the
+   JSON doesn't parse.
 4. `max_turns` ran out before the promise was emitted.
 
-On any of those, the orchestrator re-runs the **same** user prompt. Between
-iterations, the agent's prior scratch (notes, partial rankings, fetched
-content) persists under `results/<paper-stem>/notes/iter-N/`, so the next
-iteration's agent has its previous self's work as feedstock when it starts.
-We do **not** iterate to chase subjective ranking improvements — quality is
-the responsibility of the agent's intra-iteration neuroticism, not the outer
-loop.
+On any of those, the orchestrator re-runs the **same** user prompt. The
+agent's working files (the in-progress `ranking.json` / `ranking.md` from
+the previous iteration) persist on disk and the next iteration's agent sees
+them — feedstock when iteration actually happens.
 
-When `max_iterations` is exhausted, the orchestrator persists whatever artifacts
-exist, appends `<paper-stem>` to `results/_failures.log` with a reason, and
-moves on. The batch run continues; one failed paper doesn't fail the run.
+We do **not** iterate to chase subjective ranking quality. Quality is the
+responsibility of the agent's intra-iteration neuroticism. The outer loop
+is purely a failure-recovery mechanism.
 
-### Why this differs from canonical ralph-loop
+When `max_iterations` is exhausted, the orchestrator persists whatever
+artifacts exist, appends `<paper-stem>` to `results/_failures.log` with a
+reason, and moves to the next paper. One failed paper doesn't fail the run.
 
-Ralph-loop's "iterate until promise" pattern shines when each iteration *builds
-something* the next iteration can polish (code, tests). Our task is web search;
-"building" only happens within a single iteration through careful reading. So
-we adopt ralph-loop's three primitives — **persistent scratch on disk**,
-**completion promise**, **max-iterations safety** — but reject its
-"keep-iterating-for-quality" instinct. The loop is purely a failure-recovery
-mechanism here.
+### Difference from canonical ralph-loop
 
-## 9. Done criterion (judgment-based, no counts)
+Ralph-loop iterates to *build* something across iterations (code, tests).
+Our task is web search; "building" happens within a single iteration through
+careful reading. We adopt ralph-loop's three primitives — persistent scratch
+on disk, completion promise, max-iterations safety — and reject its
+"keep-iterating-for-quality" instinct. Loop is for failure recovery only.
 
-The skill body instructs the agent to stop on **recognition**, not on a
-threshold. The completion promise marks recognition. There is no minimum or
-maximum number of venues to consult.
+## 11. Output contract
 
-In the skill body:
-
-> Keep searching until you recognize — viscerally, the way a reviewer would —
-> that you've found the venue this paper belongs to. That recognition might
-> land after one venue or after fifty. Do not count. Do not stop because you've
-> "seen enough." Stop because *this is it*. If after honest, thorough searching
-> nothing strongly clicks, name the closest survivors and say so plainly; never
-> return empty-handed, but never embellish a weak fit.
-
-## 10. Output contract
-
-### 10.1 Per-paper directory
+### 11.1 Per-paper directory (final state only — no per-iteration archives)
 
 ```
 results/<paper-stem>/
-├── ranking.json          # structured, machine-readable
-├── ranking.md            # human-readable summary + per-venue rationale
-├── iteration.log         # one line per outer-loop iteration with outcome
-└── notes/
-    └── iter-1/           # agent scratchpad from iteration 1
-        ├── paper-statement.md
-        ├── candidates.jsonl
-        └── fetched/      # cached WebFetch content (optional)
+├── ranking.json          # final, structured
+├── ranking.md            # final, human-readable
+└── iteration.log         # one line per outer-loop iteration with outcome
 ```
 
-### 10.2 `ranking.json` shape
+The agent updates `ranking.json` and `ranking.md` continuously during a single
+iteration. Between iterations they are the agent's own feedstock (it reads
+its prior self's work from these files). When the agent emits the promise,
+the current state of the files IS the final output. **No `notes/iter-N/`
+sub-directories are created.**
+
+### 11.2 `ranking.json` shape
 
 ```json
 {
   "paper": {
-    "path": "input_examples/Foo.docx",
+    "path": "papers/Foo.docx",
     "language": "pt-BR",
-    "is_statement": "…",
-    "isnt_statement": "…"
+    "is_statement": "What the paper IS — its contribution, methods, applied domain.",
+    "isnt_statement": "What the paper IS NOT — explicit out-of-scope notes."
   },
   "params": {
     "soon_days": 31,
@@ -349,62 +478,124 @@ results/<paper-stem>/
       "kind": "conference|journal|magazine|track|workshop",
       "url": "https://…",
       "country": "BR",
-      "languages": ["pt-BR","en"],
+      "languages": ["pt-BR", "en"],
       "deadline": "2026-06-15",
-      "topics_matched": ["IS in industry","applied AI"],
-      "rationale": "Paragraph explaining why this is the fit and what about the paper specifically lands here."
+      "topics_matched": ["IS in industry", "applied AI"],
+      "rationale": "Specific paragraph tying the paper's contribution to this venue's stated topics. No generic platitudes."
     }
   ],
-  "opening_soon": [ /* same shape; deadline > today+soon_days excluded */ ],
-  "closest_misses": [
-    /* venues considered seriously but ruled out, with reason */
-  ],
-  "agent_notes": "free-form short summary from the agent, including any tie-break vibes-rationale"
+  "opening_soon": [ /* same shape; deadline within now+soon_days */ ],
+  "closest_misses": [ /* venues considered seriously but ruled out, with reason */ ],
+  "agent_notes": "Free-form short summary, including any tie-break 'vibes' rationale."
 }
 ```
 
-### 10.3 Failures aggregate
+### 11.3 Failures aggregate
 
 `results/_failures.log` — one line per failed paper:
+
 ```
 2026-05-26T14:35:11  Foo.docx  iterations_exhausted  last_reason=no_promise_in_final_message
 ```
 
-## 11. Distribution plan
+## 12. Resource-aware concurrency (no knob for the user to misconfigure)
+
+Pool size at startup is determined from **actually-available** resources,
+inside the container (Docker enforces cgroup limits visible to psutil):
+
+```python
+cpu_count   = os.cpu_count()
+cpu_used    = psutil.cpu_percent(interval=1.0)        # measured
+cpu_free    = max(0, cpu_count * (1 - cpu_used/100))
+cpu_workers = max(1, int(cpu_free * 0.8) - 1)         # 80% of free, leave 1 CPU
+
+mem_free    = psutil.virtual_memory().available       # bytes currently free
+# heuristic worker memory: probed empirically the first time, otherwise
+# fall back to a conservative built-in estimate of ~800 MiB. NOT user-tuned.
+mem_workers = max(1, mem_free // ESTIMATED_BYTES_PER_WORKER)
+
+pool_size = min(num_papers, cpu_workers, mem_workers, user_max_parallel_or_inf)
+```
+
+The CLI prints the chosen size and the math:
+
+```
+host:    8 CPUs (12% in use right now), 16.0 GiB RAM (6.4 GiB free)
+budget:  80% of free CPU, leave ≥1 CPU for the OS
+result:  5 workers   (capped by: mem=5, cpu=6, papers=23)
+queue:   23 papers → 5 in parallel, ~4 batches expected
+```
+
+`--max-parallel N` is an upper bound, still clamped by `cpu_workers` /
+`mem_workers`. We never overcommit, even if asked.
+
+### Multiprocessing, not threading
+
+`multiprocessing.Pool` (or `ProcessPoolExecutor`) with `spawn` start method.
+GIL-irrelevant; each worker is a separate process.
+
+## 13. Composition root
+
+`compose.py` is the DDD composition root. It assembles the object graph in
+plain Python and exposes a single function:
+
+```python
+# compose.py
+def build_orchestrator(args) -> Orchestrator:
+    skill_root        = ensure_skills_resolved(args)             # validates extras
+    resource_probe    = ResourceProbe()
+    worker_factory    = WorkerFactory(
+        cwd="/app",
+        skill_names=["venue-matcher", *args.extra_skill_names],
+        system_prompt=SYSTEM_PROMPT,
+        max_turns=80,
+        max_iterations=args.max_iterations,
+    )
+    return Orchestrator(
+        worker_factory=worker_factory,
+        resource_probe=resource_probe,
+        input_dir=args.input_dir,
+        output_dir=args.output_dir,
+        user_max_parallel=args.max_parallel,
+        soon_days=args.soon_days,
+        countries=args.countries,
+    )
+```
+
+Entry points (`cli.py`, future tests, future alternative drivers) import
+from `compose.py` to get a wired-up `Orchestrator` they can `.run()`.
+
+## 14. Distribution plan
 
 ### Today (in scope)
-- `skills/venue-matcher/` exists in this repo.
-- `batch_venue_matcher/` consumes it locally via runtime staging.
-- Nothing is published. No `.claude-plugin/plugin.json`.
+- `skills/venue-matcher/` in git.
+- `batch_venue_matcher/` consumes it locally via a build-time symlink inside
+  the Docker image.
+- Nothing published. No `.claude-plugin/plugin.json`.
 
-### Later (out of scope here, but path is preserved)
-- Add `.claude-plugin/plugin.json` to publish as a plugin.
+### Later (out of scope here)
+- Add `.claude-plugin/plugin.json`, publish.
 - Teammates run `/plugin install paperflow@<source>`; the skill becomes
   available as `/paperflow:venue-matcher` in their Claude Code.
-- The repo will also document the local batch app for power users who clone.
+- Document the local batch app for power users who clone.
 
-## 12. Open questions
+## 15. Verification
 
-None that block writing the implementation plan. The two questions deferred to
-implementation:
+Before declaring skill+app working:
 
-- Whether `docx.py` should pre-translate non-EN papers or just pass-through
-  (currently pass-through; the agent reads PT-BR fine and the venue-matching is
-  about content, not surface form).
-- Exact subagent count in Stage B (2–4 currently); we'll tune during the first
-  real runs against `input_examples/`.
-
-## 13. Verification
-
-Before declaring the skill+app working:
-
-1. Run `batch_venue_matcher` on `input_examples/CONSULTOR VIRTUAL PARA
-   PROSPECÇÃO DE P&D EMBRAPII_MatchIT.docx` end-to-end.
-2. Inspect `ranking.json` and `ranking.md` for the example paper; the top venue
-   in `open_now` must have a rationale specifically tying the paper's
+1. Run the app on `input_examples/CONSULTOR VIRTUAL PARA PROSPECÇÃO DE P&D
+   EMBRAPII_MatchIT.docx` end-to-end.
+2. Inspect `results/<stem>/ranking.json` and `ranking.md`. The top venue in
+   `open_now` must have a rationale specifically tying the paper's
    contribution to the venue's stated topics.
-3. Confirm pool sizing log line on at least two machines with different
-   load profiles.
-4. Confirm failure recovery by injecting a forced failure (e.g. unplug network
-   mid-run, or set `max_turns=2` so the agent can't finish) and observing the
-   outer loop re-iterate up to `max_iterations` then log to `_failures.log`.
+3. Confirm pool sizing log line on at least two machines / load profiles.
+4. Inject a forced failure (e.g. set `max_turns=2`) and confirm the outer
+   loop iterates up to `max_iterations` and then logs to `_failures.log`.
+5. Confirm `make validate` rejects a synthetic skill-name collision.
+
+## 16. Open questions (deferred to implementation)
+
+- Whether to pre-translate non-EN papers (currently: pass-through; the agent
+  reads PT-BR fine and the matching is about content, not surface form).
+- Exact subagent count in Stage B (2–4 currently); tune during the first
+  real runs against `input_examples/`.
