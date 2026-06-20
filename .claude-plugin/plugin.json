@@ -1,0 +1,8 @@
+{
+  "name": "academia-perks",
+  "version": "0.1.0",
+  "description": "Utilities for getting papers published in academia — agentic tools that automate the heavy, manual parts of the academic publishing workflow.",
+  "author": { "name": "Hugo Fernandes Silva" },
+  "license": "MIT",
+  "keywords": ["academia", "publishing", "venues", "call-for-papers", "research"]
+}

@@ -1,8 +1,7 @@
-# Brazilian academic CS/IT ecosystems
+# Brazilian CS/IT venue map (the fallback country)
 
-Starting map of the major Brazilian venues for computer-science and
-applied-IT papers. Not exhaustive. Use as a launchpad; always verify
-current editions via WebFetch.
+Starting launchpad — always verify the current edition by WebFetch. Brazil is
+the default country when the paper states none.
 
 ## SBC — Sociedade Brasileira de Computação
 
@@ -69,7 +68,7 @@ core mission), look at:
 - **ENIAC** — Encontro Nacional de Inteligência Artificial e
   Computacional. SBC's main AI symposium.
 - **BRACIS** — Brazilian Conference on Intelligent Systems. Broader AI
-  and applications, English-friendly.
+  and applications.
 - **STIL** — Symposium in Information and Human Language Technology.
   NLP focus.
 
@@ -84,8 +83,6 @@ When the paper is more practitioner / case-study than original research:
 
 ## Cross-cutting notes
 
-- Many SBC venues accept both PT-BR and EN. Some require EN-only for
-  the latest editions; always verify on the CFP.
 - "Open" vs "rolling" deadlines: journals are usually rolling;
   symposia/tracks are annual with discrete windows.
 - Workshop tracks attached to bigger conferences (e.g. WCGE inside
@@ -95,7 +92,6 @@ When the paper is more practitioner / case-study than original research:
 ## Not on this list
 
 This map is intentionally limited to Brazilian-anchored venues. For
-papers with strong international fit (and EN content), the search
-should also explore IEEE / ACM main conferences in the paper's specific
-subfield. That's the agent's call when reading the paper's IS/ISN'T
-statement.
+papers with strong international fit, the search should also explore
+IEEE / ACM main conferences in the paper's specific subfield. That's
+the agent's call when reading the paper's IS/ISN'T statement.
