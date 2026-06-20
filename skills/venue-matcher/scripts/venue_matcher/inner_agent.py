@@ -53,6 +53,7 @@ async def run_pass(
         cwd=str(cwd),
         setting_sources=[],                       # inner agent gets NO skills
         allowed_tools=["Read", "Write", "WebSearch", "WebFetch"],
+        disallowed_tools=["Agent"],
         system_prompt=system_prompt,
         max_turns=max_turns,
         model=model,
