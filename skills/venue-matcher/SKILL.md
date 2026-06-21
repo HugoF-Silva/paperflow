@@ -37,10 +37,12 @@ what is happening — excellent service.
 5. **Run it in the background and poll.** You may set only `--input-dir` and
    `--soon-days`:
    `python ${CLAUDE_PLUGIN_ROOT}/skills/venue-matcher/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N> > /tmp/vm.out 2>&1 &`
-   Then poll `results/_progress.log` until it shows `BATCH COMPLETE`, reporting
-   the running `done/total`. Do not give up early.
+   The program writes to `/work/results` (its configured output directory) and
+   prints that directory on its final stdout line, so you can confirm it there.
+   Then poll `/work/results/_progress.log` until it shows `BATCH COMPLETE`,
+   reporting the running `done/total`. Do not give up early.
 6. **If it ends with no result** (e.g. the sandbox killed it at ~5 min), say so
    plainly and suggest cloning the repo to run locally as a developer (more work,
    but reliable for many papers).
-7. **Always report outcomes:** the created files `results/<stem>/ranking.json`
-   and `results/<stem>/ranking.md`, plus a human-friendly summary of the ranking.
+7. **Always report outcomes:** the created files `/work/results/<stem>/ranking.json`
+   and `/work/results/<stem>/ranking.md`, plus a human-friendly summary of the ranking.

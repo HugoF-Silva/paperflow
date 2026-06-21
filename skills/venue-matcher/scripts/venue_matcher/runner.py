@@ -76,10 +76,13 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
     progress = out_dir / "_progress.log"
     total = len(papers)
 
-    cpu_count, cpu_used, mem_free = _auto_inputs()
     mp_setting = max_parallel if max_parallel == "auto" else int(max_parallel)
-    pool = compute_pool_size(total, mp_setting, cpu_count, cpu_used, mem_free,
-                             EST_BYTES_PER_WORKER)
+    if mp_setting == 1:
+        pool = 1                                  # sequential: no need to probe resources
+    else:
+        cpu_count, cpu_used, mem_free = _auto_inputs()
+        pool = compute_pool_size(total, mp_setting, cpu_count, cpu_used, mem_free,
+                                 EST_BYTES_PER_WORKER)
     print(f"pool size: {pool} (papers={total}, max_parallel={max_parallel})", flush=True)
 
     succeeded = 0

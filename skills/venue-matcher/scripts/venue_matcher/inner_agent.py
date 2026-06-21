@@ -2,7 +2,7 @@
 prior pass's compacted recap as the FIRST assistant turn of message history
 (ahead of the user order). The recap-as-assistant-turn is the maintainer's
 tested mechanism; the build is isolated in build_input_messages so it is unit-
-tested without the SDK, and verified live against claude-agent-sdk 0.2.105."""
+tested without the SDK, and verified live against claude-agent-sdk 0.2.106."""
 from __future__ import annotations
 
 import pathlib

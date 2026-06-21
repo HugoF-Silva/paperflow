@@ -76,7 +76,8 @@ def run_for_paper(
                 continue
             if has_promise(result.last_text):
                 return RalphResult(True, pass_no, "success")
-            recap = await compact_recap(result.session_id, model)
+            if pass_no < max_ralph:                # final pass's recap would be discarded
+                recap = await compact_recap(result.session_id, model)
         return RalphResult(False, max_ralph, last_reason)
 
     return asyncio.run(_run())
