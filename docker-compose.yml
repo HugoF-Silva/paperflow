@@ -4,19 +4,13 @@ services:
     volumes:
       - ./papers:/work/papers:ro
       - ./results:/work/results
-      # Optional: mount a local config so the orchestrator can read it.
-      # `touch .paperflow.local.toml` ahead of time so Docker doesn't create
-      # a directory in its place.
       - ./.paperflow.local.toml:/app/.paperflow.local.toml:ro
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      MAX_PARALLEL: ${MAX_PARALLEL:-1}
+      MAX_RALPH: ${MAX_RALPH:-8}
     command:
-      - run
       - --input-dir
       - /work/papers
-      - --output-dir
-      - /work/results
       - --soon-days
       - "31"
-      - --countries
-      - BR
