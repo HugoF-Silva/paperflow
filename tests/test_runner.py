@@ -21,6 +21,12 @@ def test_compute_pool_size_clamped_by_memory():
 def test_compute_pool_size_never_below_one():
     assert runner.compute_pool_size(5, "auto", 1, 100.0, 0, 800*1024*1024) == 1
 
+def test_compute_pool_size_explicit_clamped_by_resources():
+    # explicit N=50 but ~1 free CPU and ~1.6 GiB free -> clamped far below 50
+    n = runner.compute_pool_size(100, 50, 1, 99.0, 1.6*GIB, 800*1024*1024)
+    assert n < 50
+    assert n == 1
+
 def test_progress_log_and_sentinel(tmp_path):
     p = tmp_path / "_progress.log"
     runner.append_progress(p, 1, 3)

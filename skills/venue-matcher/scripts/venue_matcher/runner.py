@@ -26,13 +26,14 @@ def resolve_max_parallel(env_value: str | None) -> int | str:
 
 def compute_pool_size(num_papers, max_parallel, cpu_count, cpu_used_pct,
                       mem_free_bytes, est_bytes_per_worker) -> int:
+    cpu_free = max(0.0, cpu_count * (1 - cpu_used_pct / 100))
+    cpu_workers = max(1, int(cpu_free * CPU_SAFETY) - 1)
+    mem_workers = max(1, int(mem_free_bytes * MEM_SAFETY) // est_bytes_per_worker)
+    resource_cap = min(cpu_workers, mem_workers)
     if isinstance(max_parallel, int):
-        upper = max_parallel
+        upper = min(max_parallel, resource_cap)   # explicit N is still clamped
     else:  # "auto"
-        cpu_free = max(0.0, cpu_count * (1 - cpu_used_pct / 100))
-        cpu_workers = max(1, int(cpu_free * CPU_SAFETY) - 1)
-        mem_workers = max(1, int(mem_free_bytes * MEM_SAFETY) // est_bytes_per_worker)
-        upper = min(cpu_workers, mem_workers)
+        upper = resource_cap
     return max(1, min(num_papers, upper))
 
 
@@ -75,10 +76,10 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
     progress = out_dir / "_progress.log"
     total = len(papers)
 
-    if max_parallel == "auto":
-        pool = compute_pool_size(total, "auto", *_auto_inputs(), EST_BYTES_PER_WORKER)
-    else:
-        pool = compute_pool_size(total, int(max_parallel), 1, 0.0, 0, EST_BYTES_PER_WORKER)
+    cpu_count, cpu_used, mem_free = _auto_inputs()
+    mp_setting = max_parallel if max_parallel == "auto" else int(max_parallel)
+    pool = compute_pool_size(total, mp_setting, cpu_count, cpu_used, mem_free,
+                             EST_BYTES_PER_WORKER)
     print(f"pool size: {pool} (papers={total}, max_parallel={max_parallel})", flush=True)
 
     succeeded = 0
