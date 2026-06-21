@@ -19,9 +19,9 @@ def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="academia-perks-harness")
     p.add_argument("--input-dir", type=pathlib.Path, default=pathlib.Path("/work/papers"))
     p.add_argument("--soon-days", type=int, default=31)
-    p.add_argument("--max-ralph", type=int, default=8)
-    p.add_argument("--max-parallel", default="1")          # int-as-str or "auto"
-    p.add_argument("--inner-max-turns", type=int, default=50)
+    p.add_argument("--max-ralph", type=int, default=int(os.environ.get("MAX_RALPH", "8")))
+    p.add_argument("--max-parallel", default=os.environ.get("MAX_PARALLEL", "1"))          # int-as-str or "auto"
+    p.add_argument("--inner-max-turns", type=int, default=int(os.environ.get("INNER_MAX_TURNS", "50")))
     p.add_argument("--extra-skill-paths", action="append", default=[], type=pathlib.Path)
     p.add_argument("--local-config", type=pathlib.Path,
                    default=pathlib.Path("/app/.paperflow.local.toml"))
