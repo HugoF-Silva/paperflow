@@ -40,7 +40,7 @@ def main(argv=None) -> int:
 
     out_dir = pathlib.Path(os.environ.get("OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
     max_ralph = int(os.environ.get("MAX_RALPH", "8"))
-    inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "60")))
+    inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
 
     summary = runner.run_batch(papers, out_dir, args.soon_days, max_ralph,
