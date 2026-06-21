@@ -19,7 +19,10 @@ def build_outer_prompt(input_dir: str, soon_days: int, api_keys: dict[str, str])
         "Then follow the skill: install deps, run the bundled CLI in the "
         "background with --input-dir and --soon-days, poll results/_progress.log "
         "until BATCH COMPLETE, and report the result files plus a human-friendly "
-        "summary. If the input directory has no papers, say so and stop."
+        "summary. If the input directory has no papers, say so and stop. "
+        "Pass ONLY --input-dir and --soon-days to the program; never set "
+        "MAX_PARALLEL, INNER_MAX_TURNS, or any other environment-variable knob "
+        "— those are fixed by the developer and are not yours to change."
     )
 
 
