@@ -1,119 +1,33 @@
-# paperflow
+# paperflow — academia-perks plugin
 
-Personal automation tools for academic publishing.
+`academia-perks` is a Claude plugin for academic publishing. Its first skill,
+**venue-matcher**, finds the publication venues a paper belongs to (conferences,
+journals, magazines, tracks, workshops), ranked by fit, split into "open now"
+and "opening soon".
 
-The first one shipped here is **venue-matcher** — find the publication
-venue(s) where an academic paper truly belongs.
+## Two ways to use it
 
-## What's in this repo
+### Layperson (claude.ai)
+Toggle the `academia-perks` plugin, set `ANTHROPIC_API_KEY` in your environment,
+upload ONE paper, and ask: "use venue-matcher to find a venue for my paper."
+A single paper targets the ~5-minute sandbox limit. More papers run sequentially
+and may exceed it — **use one session per paper**. Results are written to
+`results/<paper>/ranking.{json,md}`.
 
-- **`skills/venue-matcher/`** — the skill that drives the matching for a
-  single paper. Plugin-shape on disk (distributed later via a plugin).
-- **`batch_venue_matcher/`** — a local Python app that processes many
-  papers in parallel, one Agent SDK agent per paper, by invoking the
-  `/venue-matcher` skill against each.
-
-## Quick start
-
-1. Have Docker (with Compose) installed.
-2. Drop your `.docx` papers into `./papers/`.
-3. Put your Anthropic API key in `.env`:
-   ```
-   ANTHROPIC_API_KEY=sk-ant-...
-   ```
-4. Run:
-   ```
-   make run
-   ```
-
-Per-paper rankings land in `./results/<paper-stem>/`:
-
-- `ranking.json` — structured fit ranking, two buckets (`open_now`,
-  `opening_soon`), with per-venue rationale
-- `ranking.md` — human-readable summary
-- `iteration.log` — one line per outer-loop iteration (success or
-  failure reason)
-
-Any failed paper appends to `./results/_failures.log` with the
-last-iteration reason.
-
-## CLI
-
+### Developer (local, Docker)
+```bash
+cp .env.example .env            # put your ANTHROPIC_API_KEY in it
+mkdir -p papers && cp /path/to/*.docx papers/
+make run                        # builds + runs the outer agent over ./papers
 ```
-batch-venue-matcher run \
-  --input-dir /work/papers \
-  --output-dir /work/results \
-  --soon-days 31 \
-  --countries BR \
-  --max-parallel auto \
-  --max-iterations 8 \
-  --extra-skills-dir <path>  --extra-skill-name <name>
-```
+Per-paper output lands in `./results/<stem>/`. Tunables (dev-only, never visible
+to the agent): `MAX_PARALLEL` (default 1, or `auto`), `MAX_RALPH` (default 8),
+`INNER_MAX_TURNS` (default 50). Set them in `.env` or the shell.
 
-- `--soon-days N` — reject venues whose registration opens after
-  `today + N`.
-- `--countries CSV` — comma-separated ISO-3166 codes (default `BR`).
-- `--max-parallel auto|N` — `auto` derives a safe pool size from free
-  CPU and free RAM at startup.
-- `--max-iterations N` — hard ceiling on per-paper outer-loop iterations
-  (default 8). The loop re-iterates only on deterministic failure
-  (missing completion promise, crash, missing/malformed outputs,
-  `max_turns` hit). Quality is the agent's job inside one iteration, not
-  the loop's.
-- `--extra-skills-dir`, `--extra-skill-name` — repeatable; pull only the
-  *named* skills from the *searched* dirs. Conflicts (same name in two
-  dirs, or collision with `venue-matcher`) abort the run.
-
-Standalone validation:
-
-```
-make validate
-```
-
-resolves `.paperflow.local.toml` + CLI extras, prints any warnings, and
-exits without spawning any agent.
-
-## Local extras (per-machine)
-
-`.paperflow.local.toml` is gitignored; it holds extras to use on your
-machine without sharing them in git:
-
-```toml
-[extras]
-dirs  = ["/home/me/.claude/plugins/marketplaces/.../skills"]
-names = ["customer-research"]
-```
-
-Both `dirs` and `names` are merged with the CLI flags. The orchestrator
-warns on requested names that aren't found anywhere, and aborts on name
-conflicts.
-
-## Resource budget
-
-At startup the orchestrator prints exactly how it sized the pool, e.g.:
-
-```
-host:    8 CPUs (12% in use), 6.4 GiB RAM free
-budget:  80% of free CPU, 70% of free RAM, ≥1 CPU for the OS
-result:  5 workers   (cpu=6, mem=5, papers=23, capped_by=mem)
-```
-
-If `--max-parallel N` is set, it's an *upper bound* — still clamped by
-CPU and memory so the run doesn't tip an already-loaded machine.
-
-## Layout
-
-```
-paperflow/
-├── pyproject.toml         # python project (top-level)
-├── Dockerfile             # batch app image
-├── docker-compose.yml
-├── Makefile
-├── .env.example
-├── .paperflow.local.toml.example
-├── batch_venue_matcher/   # python package: cli/compose/orchestrator/worker
-├── skills/
-│   └── venue-matcher/     # the skill (SKILL.md + references/)
-├── docs/superpowers/specs/
-└── input_examples/        # sample paper for end-to-end testing
-```
+## How it works
+An **outer agent** runs the bundled `venue_matcher` program; the program spawns
+**one process per paper**; each process runs a **ralph loop** around a fresh
+neurotic **inner agent** (tools: Read/Write/WebSearch/WebFetch) that web-searches
+and ranks venues, carrying a compacted recap from each pass into the next as its
+own first "memory". Targeting is country-only (from the paper; Brazil if
+unstated). See `docs/superpowers/specs/2026-06-20-venue-matcher-design.md`.
