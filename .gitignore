@@ -6,6 +6,7 @@
 .paperflow.local.toml
 
 # runtime artifacts
+input_examples/
 results/
 .runtime/
 .claude/
