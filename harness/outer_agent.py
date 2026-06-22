@@ -4,11 +4,13 @@ formatted into its prompt so it can export them before running."""
 from __future__ import annotations
 
 from dataclasses import dataclass
+from datetime import datetime, timezone
 import os
 import pathlib
 import re
 import shutil
 import subprocess
+import threading
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,33 @@ API_CONFIGS = {
 API_CHOICES = tuple(API_CONFIGS)
 _TOOL_OUTPUT_LIMIT = 20_000
 _FILE_READ_LIMIT = 500_000
+_MAX_LOGGED_TOOL_LINES = 200
+_MAX_LOGGED_TOOL_LINE_CHARS = 1_000
+_SECRET_ASSIGNMENT_RE = re.compile(r"((?:OPENAI|ANTHROPIC)_API_KEY=)(\S+)")
+_OPENAI_KEY_RE = re.compile(r"sk-[A-Za-z0-9_\-*]+")
+
+
+def log_status(message: str) -> None:
+    stamp = datetime.now(tz=timezone.utc).astimezone().isoformat(timespec="seconds")
+    print(f"[paperflow] {stamp} {message}", flush=True)
+
+
+def _safe_log_text(text: str, limit: int = 300, secrets=()) -> str:
+    cleaned = text.strip()
+    for secret in secrets or ():
+        if secret and len(secret) >= 4:
+            cleaned = cleaned.replace(secret, "<redacted>")
+    cleaned = _SECRET_ASSIGNMENT_RE.sub(r"\1<redacted>", cleaned)
+    cleaned = _OPENAI_KEY_RE.sub("sk-<redacted>", cleaned)
+    cleaned = " ; ".join(line.strip() for line in cleaned.splitlines() if line.strip())
+    return _truncate(cleaned, limit)
+
+
+def _api_secret_values(env: dict[str, str]) -> list[str]:
+    return [
+        value for key in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY")
+        if (value := env.get(key))
+    ]
 
 
 def api_config(api: str) -> ApiConfig:
@@ -60,9 +89,11 @@ def build_outer_prompt(input_dir: str, soon_days: int, api_keys: dict[str, str])
         "environment (export each via Bash):\n"
         f"{keys}\n\n"
         "Then follow the skill: install deps, run the bundled CLI in the "
-        "background with --input-dir and --soon-days, poll results/_progress.log "
-        "until BATCH COMPLETE, and report the result files plus a human-friendly "
-        "summary. If the input directory has no papers, say so and stop. "
+        "foreground with --input-dir and --soon-days and a long timeout so its "
+        "stdout/stderr stream to container logs. Do not redirect matcher output "
+        "away from stdout/stderr; if you must background it, pipe through tee and "
+        "poll results/_progress.log until BATCH COMPLETE. Report the result files "
+        "plus a human-friendly summary. If the input directory has no papers, say so and stop. "
         "Pass ONLY --input-dir and --soon-days to the program; never set "
         "MAX_PARALLEL, INNER_MAX_TURNS, or any other environment-variable knob "
         "— those are fixed by the developer and are not yours to change."
@@ -80,6 +111,8 @@ def _valid_extra_skill_paths(paths) -> list[pathlib.Path]:
         if name == "venue-matcher":
             raise SystemExit("FATAL: extra skill 'venue-matcher' conflicts with the plugin skill")
         valid.append(src)
+    if valid:
+        log_status("outer_agent extra_skills=" + ",".join(src.name for src in valid))
     return valid
 
 
@@ -126,11 +159,12 @@ def _truncate(text: str, limit: int = _TOOL_OUTPUT_LIMIT) -> str:
     return text[:limit] + f"\n...[truncated {len(text) - limit} chars]"
 
 
-def build_openai_tools(cwd: pathlib.Path):
+def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
     from agents import function_tool
 
     root = pathlib.Path(cwd).resolve()
     tool_env = os.environ.copy()
+    state = state if state is not None else {}
 
     @function_tool
     def run_shell(command: str, timeout_seconds: int = 60) -> str:
@@ -144,39 +178,81 @@ def build_openai_tools(cwd: pathlib.Path):
                 name, value = assignment.split("=", 1)
                 tool_env[name] = value.strip("'\"")
                 exported.append(name)
+            log_status("tool=run_shell exported_env=" + ",".join(exported))
             return "exported " + ", ".join(exported)
 
         timeout = max(1, min(int(timeout_seconds or 60), 600))
-        try:
-            proc = subprocess.run(
-                command,
-                shell=True,
-                cwd=root,
-                env=tool_env,
-                capture_output=True,
-                text=True,
-                timeout=timeout,
-            )
-        except subprocess.TimeoutExpired as exc:
-            output = (exc.stdout or "") + (exc.stderr or "")
-            return _truncate(f"timed out after {timeout}s\n{output}")
+        secrets = _api_secret_values(tool_env)
+        log_status(
+            f"tool=run_shell start timeout={timeout}s "
+            f"command={_safe_log_text(command, secrets=secrets)}"
+        )
+        output_lines: list[str] = []
+        logged_lines = 0
 
-        chunks = [f"exit_code={proc.returncode}"]
-        if proc.stdout:
-            chunks.append("stdout:\n" + proc.stdout)
-        if proc.stderr:
-            chunks.append("stderr:\n" + proc.stderr)
+        proc = subprocess.Popen(
+            command,
+            shell=True,
+            cwd=root,
+            env=tool_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            bufsize=1,
+        )
+
+        def read_output() -> None:
+            nonlocal logged_lines
+            assert proc.stdout is not None
+            for line in proc.stdout:
+                output_lines.append(line)
+                if logged_lines < _MAX_LOGGED_TOOL_LINES:
+                    log_status(
+                        "tool=run_shell output "
+                        + _safe_log_text(
+                            line, _MAX_LOGGED_TOOL_LINE_CHARS, _api_secret_values(tool_env)
+                        )
+                    )
+                elif logged_lines == _MAX_LOGGED_TOOL_LINES:
+                    log_status("tool=run_shell output omitted_more_lines=true")
+                logged_lines += 1
+
+        reader = threading.Thread(target=read_output, daemon=True)
+        reader.start()
+        try:
+            returncode = proc.wait(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            returncode = proc.wait()
+            reader.join(timeout=5)
+            output = "".join(output_lines)
+            log_status(f"tool=run_shell timeout timeout={timeout}s output_chars={len(output)}")
+            return _truncate(f"timed out after {timeout}s\n{output}")
+        reader.join(timeout=5)
+
+        output = "".join(output_lines)
+        if "venue_matcher/cli.py" in command:
+            state["matcher_exit_code"] = returncode
+        log_status(
+            "tool=run_shell finish "
+            f"exit_code={returncode} stdout_chars={len(output)} stderr_chars=0"
+        )
+        chunks = [f"exit_code={returncode}"]
+        if output:
+            chunks.append("stdout:\n" + output)
         return _truncate("\n".join(chunks))
 
     @function_tool
     def read_file(path: str) -> str:
         """Read a UTF-8 text file inside the repository root."""
+        log_status(f"tool=read_file path={_safe_log_text(path, 200)}")
         text = _safe_path(root, path).read_text(encoding="utf-8")
         return _truncate(text, _FILE_READ_LIMIT)
 
     @function_tool
     def glob_files(pattern: str) -> str:
         """List files matching a repository-relative glob pattern."""
+        log_status(f"tool=glob_files pattern={_safe_log_text(pattern, 200)}")
         matches = []
         try:
             paths = root.glob(pattern)
@@ -193,6 +269,10 @@ def build_openai_tools(cwd: pathlib.Path):
     @function_tool
     def grep_files(pattern: str, path_glob: str = "**/*") -> str:
         """Search text files matched by path_glob for a regular expression."""
+        log_status(
+            "tool=grep_files "
+            f"pattern={_safe_log_text(pattern, 200)} path_glob={_safe_log_text(path_glob, 200)}"
+        )
         try:
             regex = re.compile(pattern)
             paths = root.glob(path_glob)
@@ -223,6 +303,7 @@ async def _run_anthropic(prompt: str, repo_root: pathlib.Path, extra_skill_paths
 
     stage_extra_skills(extra_skill_paths, repo_root / ".claude" / "skills")
     plugin_root = resolve_plugin_root(repo_root, "anthropic")
+    log_status(f"outer_agent provider=anthropic plugin={plugin_root} model={model}")
 
     options = ClaudeAgentOptions(
         cwd=str(repo_root),
@@ -234,10 +315,13 @@ async def _run_anthropic(prompt: str, repo_root: pathlib.Path, extra_skill_paths
         model=model,
     )
     rc = 0
+    log_status("outer_agent provider=anthropic start")
     async for message in query(prompt=prompt, options=options):
+        log_status(f"outer_agent provider=anthropic event={type(message).__name__}")
         if isinstance(message, ResultMessage):
             print(message.result or "", flush=True)
             rc = 0 if getattr(message, "subtype", "") == "success" else 1
+    log_status(f"outer_agent provider=anthropic finish exit_code={rc}")
     return rc
 
 
@@ -245,15 +329,21 @@ async def _run_openai(prompt: str, repo_root: pathlib.Path, extra_skill_paths,
                       model: str) -> int:
     from agents import Agent, Runner
 
+    skill_path = resolve_skill_path(repo_root, "openai")
+    tool_state: dict = {}
+    log_status(f"outer_agent provider=openai skill={skill_path} model={model}")
     agent = Agent(
         name="venue-matcher-outer",
         instructions=build_openai_outer_instructions(repo_root, extra_skill_paths),
         model=model,
-        tools=build_openai_tools(repo_root),
+        tools=build_openai_tools(repo_root, tool_state),
     )
+    log_status("outer_agent provider=openai start")
     result = await Runner.run(agent, prompt, max_turns=600)
+    rc = int(tool_state.get("matcher_exit_code", 0) or 0)
+    log_status(f"outer_agent provider=openai finish exit_code={rc}")
     print(str(result.final_output or ""), flush=True)
-    return 0
+    return rc
 
 
 async def run(prompt: str, repo_root: pathlib.Path, extra_skill_paths=None,
@@ -262,6 +352,10 @@ async def run(prompt: str, repo_root: pathlib.Path, extra_skill_paths=None,
     repo_root = pathlib.Path(repo_root)
     config = api_config(api)
     selected_model = model or config.default_model
+    log_status(
+        f"harness_start api={api} model={selected_model} "
+        f"repo_root={repo_root} plugin={repo_root / config.plugin_path}"
+    )
     if api == "anthropic":
         return await _run_anthropic(prompt, repo_root, extra_skill_paths, selected_model)
     if api == "openai":

@@ -8,6 +8,7 @@ import os
 import pathlib
 import sys
 
+from logging_utils import log_status
 import runner
 
 REQUIRED_KEYS = ["OPENAI_API_KEY"]
@@ -42,9 +43,18 @@ def main(argv=None) -> int:
     max_ralph = int(os.environ.get("MAX_RALPH", "8"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
+    log_status(
+        f"cli_start api=openai input_dir={args.input_dir} papers={len(papers)} "
+        f"soon_days={args.soon_days} out_dir={out_dir} max_ralph={max_ralph} "
+        f"inner_max_turns={inner_max_turns} max_parallel={max_parallel}"
+    )
 
     summary = runner.run_batch(papers, out_dir, args.soon_days, max_ralph,
                                inner_max_turns, max_parallel)
+    log_status(
+        f"cli_finish succeeded={summary['succeeded']} total={summary['total']} "
+        f"failed={summary['failed']} out_dir={out_dir}"
+    )
     print(f"Done: {summary['succeeded']}/{summary['total']} succeeded "
           f"({summary['failed']} failed). Results in {out_dir}", flush=True)
     return 0 if summary["failed"] == 0 else 1

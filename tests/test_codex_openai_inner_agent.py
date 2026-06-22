@@ -1,6 +1,8 @@
 import importlib.util
+import asyncio
 import pathlib
 import sys
+import types
 
 import pytest
 
@@ -114,3 +116,79 @@ def test_openai_fetch_redirect_to_private_host_is_rejected(monkeypatch):
 
     with pytest.raises(ValueError, match="host must be public"):
         inner_agent._fetch_public_url("http://93.184.216.34/start")
+
+def test_openai_run_pass_logs_i_j_t_stream_events(monkeypatch, tmp_path, capsys):
+    inner_agent = load_openai_inner_agent()
+
+    def function_tool(fn):
+        return fn
+
+    class WebSearchTool:
+        pass
+
+    class Agent:
+        def __init__(self, **kwargs):
+            self.kwargs = kwargs
+
+    class StreamedResult:
+        final_output = "final answer"
+        last_response_id = "resp_1"
+
+        async def stream_events(self):
+            yield types.SimpleNamespace(
+                type="raw_response_event",
+                data=types.SimpleNamespace(type="response.created"),
+            )
+            yield types.SimpleNamespace(
+                type="raw_response_event",
+                data=types.SimpleNamespace(type="response.text.delta", delta="final"),
+            )
+            response = types.SimpleNamespace(
+                status="completed",
+                output=[
+                    types.SimpleNamespace(
+                        content=[types.SimpleNamespace(text="final answer")]
+                    )
+                ],
+            )
+            yield types.SimpleNamespace(
+                type="raw_response_event",
+                data=types.SimpleNamespace(type="response.completed", response=response),
+            )
+
+    class Runner:
+        @staticmethod
+        def run_streamed(agent, input, max_turns):
+            return StreamedResult()
+
+    monkeypatch.setitem(
+        sys.modules,
+        "agents",
+        types.SimpleNamespace(
+            Agent=Agent,
+            Runner=Runner,
+            WebSearchTool=WebSearchTool,
+            function_tool=function_tool,
+        ),
+    )
+
+    result = asyncio.run(inner_agent.run_pass(
+        "SYSTEM",
+        "USER ORDER",
+        None,
+        tmp_path,
+        50,
+        ralph_pass_no=2,
+        ralph_max_passes=8,
+    ))
+
+    out = capsys.readouterr().out
+    assert result.last_text == "final answer"
+    assert result.session_id == "resp_1"
+    assert "inner_agent_pass_start pass_no=2 max_ralph=8" in out
+    assert "inner_agent_turn pass_no=2 max_ralph=8 agent_iteration=0 turn=1 event=input_message" in out
+    assert "inner_agent_turn pass_no=2 max_ralph=8 agent_iteration=1" in out
+    assert "event=response.completed" in out
+    assert "inner_agent_iteration_finish pass_no=2 max_ralph=8 agent_iteration=1" in out
+    assert 'output_preview="final answer"' in out
+    assert "inner_agent_pass_finish pass_no=2 max_ralph=8 agent_iterations=1" in out

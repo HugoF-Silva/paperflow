@@ -140,6 +140,37 @@ def test_run_openai_uses_openai_agents_sdk_not_claude(monkeypatch, tmp_path):
     assert captured["run"]["prompt"] == "outer prompt"
     assert captured["run"]["max_turns"] == 600
 
+def test_openai_shell_logging_redacts_api_key_values(monkeypatch, tmp_path, capsys):
+    def function_tool(fn):
+        return fn
+
+    monkeypatch.setitem(sys.modules, "agents", types.SimpleNamespace(function_tool=function_tool))
+
+    tools = outer_agent.build_openai_tools(tmp_path)
+    run_shell = next(tool for tool in tools if tool.__name__ == "run_shell")
+
+    run_shell("export OPENAI_API_KEY=secret-value")
+    run_shell("echo OPENAI_API_KEY=secret-value", timeout_seconds=5)
+
+    out = capsys.readouterr().out
+    assert "exported_env=OPENAI_API_KEY" in out
+    assert "OPENAI_API_KEY=<redacted>" in out
+    assert "secret-value" not in out
+
+def test_openai_shell_records_matcher_exit_code(monkeypatch, tmp_path):
+    def function_tool(fn):
+        return fn
+
+    state = {}
+    monkeypatch.setitem(sys.modules, "agents", types.SimpleNamespace(function_tool=function_tool))
+
+    tools = outer_agent.build_openai_tools(tmp_path, state)
+    run_shell = next(tool for tool in tools if tool.__name__ == "run_shell")
+
+    run_shell("python venue_matcher/cli.py", timeout_seconds=5)
+
+    assert state["matcher_exit_code"] != 0
+
 def test_stage_extra_skills_fatal_on_venue_matcher_collision(tmp_path):
     src = tmp_path / "venue-matcher"
     src.mkdir()
