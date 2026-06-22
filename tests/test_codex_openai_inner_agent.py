@@ -71,12 +71,46 @@ def test_openai_file_tools_reject_paths_outside_workdir(tmp_path):
         inner_agent._safe_path(tmp_path, "../outside.txt")
 
 
-def test_openai_fetch_url_rejects_non_public_urls():
+def test_openai_fetch_rejects_non_http_scheme():
     inner_agent = load_openai_inner_agent()
 
     with pytest.raises(ValueError, match="http or https"):
-        inner_agent._validate_public_url("file:///etc/passwd")
+        inner_agent._fetch_once("file:///etc/passwd")
+
+
+def test_openai_resolve_pinned_ip_rejects_loopback_and_localhost():
+    inner_agent = load_openai_inner_agent()
+
     with pytest.raises(ValueError, match="host must be public"):
-        inner_agent._validate_public_url("http://localhost:8000")
+        inner_agent._resolve_pinned_ip("localhost")
     with pytest.raises(ValueError, match="host must be public"):
-        inner_agent._validate_public_url("http://127.0.0.1:8000")
+        inner_agent._resolve_pinned_ip("127.0.0.1")
+
+
+def test_openai_resolve_pinned_ip_fails_closed_when_unresolvable(monkeypatch):
+    inner_agent = load_openai_inner_agent()
+
+    def boom(host, port):
+        raise inner_agent.socket.gaierror("simulated DNS failure")
+
+    monkeypatch.setattr(inner_agent.socket, "getaddrinfo", boom)
+
+    with pytest.raises(ValueError, match="host must be public"):
+        inner_agent._resolve_pinned_ip("example.com")
+
+
+def test_openai_fetch_redirect_to_private_host_is_rejected(monkeypatch):
+    """A redirect must be re-validated, not just the start URL, otherwise a
+    public-looking start URL could 302 the fetch into a private network."""
+    inner_agent = load_openai_inner_agent()
+    hops = {"http://93.184.216.34/start": "http://10.0.0.5/private"}
+
+    def fake_fetch_once(url):
+        parsed = inner_agent.urllib.parse.urlparse(url)
+        inner_agent._resolve_pinned_ip(parsed.hostname)  # exercises the real check
+        return b"ok", hops.get(url), "utf-8"
+
+    monkeypatch.setattr(inner_agent, "_fetch_once", fake_fetch_once)
+
+    with pytest.raises(ValueError, match="host must be public"):
+        inner_agent._fetch_public_url("http://93.184.216.34/start")

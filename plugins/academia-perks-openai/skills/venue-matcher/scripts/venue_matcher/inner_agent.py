@@ -7,15 +7,19 @@ SDK installed.
 """
 from __future__ import annotations
 
+import http.client
 import ipaddress
 import pathlib
 import socket
-import urllib.error
 import urllib.parse
-import urllib.request
 from dataclasses import dataclass
 
 import prompts
+
+_FETCH_TIMEOUT = 20
+_MAX_FETCH_BYTES = 500_000
+_MAX_REDIRECTS = 5
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 
 
 @dataclass
@@ -40,38 +44,93 @@ def _safe_path(root: pathlib.Path, raw_path: str) -> pathlib.Path:
     return target
 
 
-def _host_is_private(hostname: str | None) -> bool:
-    if not hostname:
-        return True
-    host = hostname.strip("[]").lower()
-    if host == "localhost" or host.endswith(".localhost"):
-        return True
-    try:
-        addresses = [ipaddress.ip_address(host)]
-    except ValueError:
-        try:
-            infos = socket.getaddrinfo(host, None)
-        except socket.gaierror:
-            return False
-        addresses = [ipaddress.ip_address(info[4][0]) for info in infos]
-    return any(
+def _is_unsafe_ip(ip: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
+    return (
         ip.is_private
         or ip.is_loopback
         or ip.is_link_local
         or ip.is_multicast
         or ip.is_reserved
         or ip.is_unspecified
-        for ip in addresses
     )
 
 
-def _validate_public_url(url: str) -> str:
+def _resolve_pinned_ip(hostname: str) -> str:
+    """Resolve hostname to one public IP to connect to directly. Connecting to
+    the very IP that was just checked (instead of letting the HTTP client
+    re-resolve the hostname at connect time) is what closes the DNS-rebinding
+    TOCTOU a separate check-then-connect-by-hostname step would leave open.
+    A hostname that fails to resolve is treated as unsafe, not as public."""
+    host = hostname.strip("[]").lower()
+    try:
+        addresses = [ipaddress.ip_address(host)]
+    except ValueError:
+        try:
+            infos = socket.getaddrinfo(host, None)
+        except socket.gaierror as exc:
+            raise ValueError("url host must be public") from exc
+        addresses = [ipaddress.ip_address(info[4][0]) for info in infos]
+    public = [ip for ip in addresses if not _is_unsafe_ip(ip)]
+    if not public:
+        raise ValueError("url host must be public")
+    return str(public[0])
+
+
+class _PinnedHTTPConnection(http.client.HTTPConnection):
+    def __init__(self, pinned_ip: str, host: str, port: int, timeout: float):
+        super().__init__(host, port, timeout=timeout)
+        self._pinned_ip = pinned_ip
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection((self._pinned_ip, self.port), self.timeout)
+
+
+class _PinnedHTTPSConnection(http.client.HTTPSConnection):
+    def __init__(self, pinned_ip: str, host: str, port: int, timeout: float):
+        super().__init__(host, port, timeout=timeout)
+        self._pinned_ip = pinned_ip
+
+    def connect(self) -> None:
+        sock = socket.create_connection((self._pinned_ip, self.port), self.timeout)
+        self.sock = self._context.wrap_socket(sock, server_hostname=self.host)
+
+
+def _fetch_once(url: str) -> tuple[bytes, str | None, str | None]:
+    """One hop: pin-and-fetch url, returning (body, redirect_location, charset)."""
     parsed = urllib.parse.urlparse(url)
     if parsed.scheme not in {"http", "https"}:
         raise ValueError("url must use http or https")
-    if _host_is_private(parsed.hostname):
+    if not parsed.hostname:
         raise ValueError("url host must be public")
-    return url
+    pinned_ip = _resolve_pinned_ip(parsed.hostname)
+    port = parsed.port or (443 if parsed.scheme == "https" else 80)
+    conn_cls = _PinnedHTTPSConnection if parsed.scheme == "https" else _PinnedHTTPConnection
+    conn = conn_cls(pinned_ip, parsed.hostname, port, _FETCH_TIMEOUT)
+    path = parsed.path or "/"
+    if parsed.query:
+        path = f"{path}?{parsed.query}"
+    try:
+        conn.request("GET", path, headers={"User-Agent": "paperflow/0.1"})
+        response = conn.getresponse()
+        body = response.read(_MAX_FETCH_BYTES)
+        location = (
+            response.headers.get("Location") if response.status in _REDIRECT_STATUSES else None
+        )
+        return body, location, response.headers.get_content_charset()
+    finally:
+        conn.close()
+
+
+def _fetch_public_url(url: str) -> str:
+    """Follow redirects up to _MAX_REDIRECTS, re-validating every hop so a
+    redirect cannot be used to reach a private target the start URL avoided."""
+    current = url
+    for _ in range(_MAX_REDIRECTS + 1):
+        body, location, charset = _fetch_once(current)
+        if not location:
+            return body.decode(charset or "utf-8", errors="replace")
+        current = urllib.parse.urljoin(current, location)
+    raise ValueError("too many redirects")
 
 
 def build_tools(cwd: pathlib.Path):
@@ -94,19 +153,15 @@ def build_tools(cwd: pathlib.Path):
 
     @function_tool
     def fetch_url(url: str) -> str:
-        """Fetch a public URL and return the first 200000 text characters."""
+        """Fetch a public URL, following redirects (each re-validated), and
+        return the first 200000 text characters."""
         try:
-            safe_url = _validate_public_url(url)
+            text = _fetch_public_url(url)
         except ValueError as exc:
             return f"fetch rejected: {exc}"
-        req = urllib.request.Request(safe_url, headers={"User-Agent": "paperflow/0.1"})
-        try:
-            with urllib.request.urlopen(req, timeout=20) as response:
-                charset = response.headers.get_content_charset() or "utf-8"
-                data = response.read(500_000)
-        except urllib.error.URLError as exc:
+        except (OSError, http.client.HTTPException) as exc:
             return f"fetch failed: {exc}"
-        return data.decode(charset, errors="replace")[:200_000]
+        return text[:200_000]
 
     return [WebSearchTool(), read_file, write_file, fetch_url]
 
