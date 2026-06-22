@@ -11,10 +11,11 @@ def test_missing_api_keys():
 
 def test_parse_args_defaults():
     ns = cli.parse_args(["--input-dir", "/p"])
-    assert str(ns.input_dir) == "/p" and ns.soon_days == 31
+    assert ns.input_dir.as_posix() == "/p" and ns.soon_days == 31
 
 def test_cli_subprocess_reports_missing_key(tmp_path):
     env = {k: v for k, v in os.environ.items() if k != "ANTHROPIC_API_KEY"}
+    env["PYTHONDONTWRITEBYTECODE"] = "1"
     proc = subprocess.run([sys.executable, str(CLI), "--input-dir", str(tmp_path)],
                           capture_output=True, text=True, env=env)
     assert proc.returncode != 0
