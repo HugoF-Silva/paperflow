@@ -10,6 +10,7 @@ WORKDIR /app
 COPY pyproject.toml README.md /app/
 COPY harness /app/harness
 COPY plugins/academia-perks-claude /app/plugins/academia-perks-claude
+COPY plugins/academia-perks-openai /app/plugins/academia-perks-openai
 RUN pip install --no-cache-dir -e /app
 
 ENV PYTHONUNBUFFERED=1 OUTPUT_DIR=/work/results

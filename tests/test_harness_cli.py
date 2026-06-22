@@ -7,6 +7,17 @@ def test_parse_defaults(monkeypatch):
     ns = cli.parse_args([])
     assert ns.input_dir.as_posix() == "/work/papers"
     assert ns.soon_days == 31 and ns.max_ralph == 8 and ns.max_parallel == "1"
+    assert ns.api == "anthropic"
+
+def test_parse_api_limited_to_supported_values():
+    assert cli.parse_args(["--api", "openai"]).api == "openai"
+    assert cli.parse_args(["--api", "anthropic"]).api == "anthropic"
+    try:
+        cli.parse_args(["--api", "claude"])
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("unsupported --api value should fail argparse validation")
 
 def test_parse_extra_skill_paths_list():
     ns = cli.parse_args(["--extra-skill-paths", "/a", "--extra-skill-paths", "/b"])
@@ -28,3 +39,48 @@ def test_env_knobs_respected_not_clobbered(monkeypatch):
     cli.apply_env(ns, env)
     assert env["MAX_PARALLEL"] == "4"            # preserved, not reset to "1"
     assert env["MAX_RALPH"] == "12"
+
+def test_required_keys_follow_selected_api():
+    assert cli.required_keys_for_api("anthropic") == ["ANTHROPIC_API_KEY"]
+    assert cli.required_keys_for_api("openai") == ["OPENAI_API_KEY"]
+
+def test_main_requires_selected_openai_key(monkeypatch, capsys):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+
+    rc = cli.main(["--api", "openai"])
+
+    err = capsys.readouterr().err
+    assert rc == 2
+    assert "OPENAI_API_KEY" in err
+    assert "ANTHROPIC_API_KEY" not in err
+
+def test_main_passes_selected_api_to_outer_agent(monkeypatch, tmp_path):
+    monkeypatch.setenv("OPENAI_API_KEY", "openai-key")
+    monkeypatch.delenv("ANTHROPIC_API_KEY", raising=False)
+    local_config = tmp_path / "local.toml"
+    local_config.write_text("", encoding="utf-8")
+    seen = {}
+
+    async def fake_run(prompt, repo_root, extras, model="claude-sonnet-4-6", api="anthropic"):
+        seen["prompt"] = prompt
+        seen["repo_root"] = repo_root
+        seen["extras"] = extras
+        seen["api"] = api
+        return 0
+
+    monkeypatch.setattr(cli.outer_agent, "run", fake_run)
+
+    rc = cli.main([
+        "--api", "openai",
+        "--local-config", str(local_config),
+        "--repo-root", str(tmp_path),
+    ])
+
+    assert rc == 0
+    assert seen["api"] == "openai"
+    assert seen["repo_root"] == tmp_path
+    assert seen["extras"] == []
+    assert "OPENAI_API_KEY" in seen["prompt"]
+    assert "openai-key" in seen["prompt"]
+    assert "ANTHROPIC_API_KEY" not in seen["prompt"]

@@ -7,6 +7,7 @@ services:
       - ./.paperflow.local.toml:/app/.paperflow.local.toml:ro
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
       MAX_PARALLEL: ${MAX_PARALLEL:-1}
       MAX_RALPH: ${MAX_RALPH:-8}
     command:
