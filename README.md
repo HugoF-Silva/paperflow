@@ -39,9 +39,23 @@ outer agent; the outer agent follows the `venue-matcher` skill and runs the
 bundled matcher program. Each harness run resets `./results/_execution.log`
 before the outer agent starts; that file mirrors the timestamped harness, tool,
 CLI, inner-agent, and batch status stream that also appears in container logs.
-`./results/_progress.log` is reserved for paper progress only: the harness clears
-it at run start, and the matcher replaces/appends paper progress once the batch
-begins.
+
+This split is intentional: `harness/` is just one possible **outer agent** —
+our own dev/Docker implementation of the generic contract described in the
+plugin's `SKILL.md`. Any other outer agent (a different harness, a different
+host, claude.ai itself) can load the same `academia-perks-*` plugin and must
+work correctly without ever having seen our harness code. So the harness only
+owns what's genuinely its own — `_execution.log`, the container-scoped record of
+the outer-agent/tool/CLI status stream — and never reaches into files owned by
+the plugin. `./results/_progress.log` is one such plugin-owned file: only the
+matcher (`runner.py`) resets and appends it, on every host, regardless of which
+outer agent is driving it. The fact that the matcher writes batch progress there
+and signals completion with `BATCH COMPLETE` lives once, in `SKILL.md`, so every
+outer agent gets it for free; the harness does not repeat it. Where the harness
+does add its own instructions to the outer-agent prompt, it states goals (e.g.
+"keep matcher output visible in container logs") rather than host-specific
+mechanics, since the agent — not the harness — is responsible for working out
+how to satisfy a goal on whatever host it is actually running on.
 For Docker Desktop log inspection, omit `--rm` and pass `--name <container-name>`;
 the harness and matcher emit timestamped `[paperflow]` / `[venue-matcher]`
 status lines to stdout/stderr.
