@@ -41,12 +41,24 @@ def apply_env(ns: argparse.Namespace, env=os.environ) -> None:
     env["INNER_MAX_TURNS"] = str(max(50, ns.inner_max_turns))
 
 
+def load_dotenv(path: pathlib.Path, env=os.environ) -> None:
+    if not path.exists():
+        return
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        env.setdefault(key.strip(), value.strip().strip("'\""))
+
+
 def required_keys_for_api(api: str) -> list[str]:
     return list(outer_agent.api_config(api).required_keys)
 
 
 def main(argv=None) -> int:
     ns = parse_args(argv)
+    load_dotenv(ns.repo_root / ".env")
 
     required_keys = required_keys_for_api(ns.api)
     missing = [k for k in required_keys if not os.environ.get(k)]

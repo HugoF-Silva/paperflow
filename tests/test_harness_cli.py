@@ -84,3 +84,29 @@ def test_main_passes_selected_api_to_outer_agent(monkeypatch, tmp_path):
     assert "OPENAI_API_KEY" in seen["prompt"]
     assert "openai-key" in seen["prompt"]
     assert "ANTHROPIC_API_KEY" not in seen["prompt"]
+
+def test_main_loads_api_key_from_repo_dotenv(monkeypatch, tmp_path):
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("OPENAI_API_KEY=from-dotenv\n", encoding="utf-8")
+    local_config = tmp_path / "local.toml"
+    local_config.write_text("", encoding="utf-8")
+    seen = {}
+
+    async def fake_run(prompt, repo_root, extras, model=None, api="anthropic"):
+        seen["prompt"] = prompt
+        seen["api"] = api
+        return 0
+
+    monkeypatch.setattr(cli.outer_agent, "run", fake_run)
+
+    rc = cli.main([
+        "--api", "openai",
+        "--repo-root", str(tmp_path),
+        "--local-config", str(local_config),
+    ])
+
+    assert rc == 0
+    assert seen["api"] == "openai"
+    assert "OPENAI_API_KEY" in seen["prompt"]
+    assert "from-dotenv" in seen["prompt"]
