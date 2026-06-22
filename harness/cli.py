@@ -71,11 +71,9 @@ def initialize_harness_logs(ns: argparse.Namespace, env=os.environ) -> pathlib.P
     if out_dir is None:
         return None
     out_dir.mkdir(parents=True, exist_ok=True)
-    (out_dir / "_progress.log").write_text("", encoding="utf-8")
     execution_log = out_dir / EXECUTION_LOG_NAME
     execution_log.write_text("", encoding="utf-8")
     env[outer_agent.EXECUTION_LOG_ENV] = str(execution_log)
-    (out_dir / "_failures.log").unlink(missing_ok=True)
     return execution_log
 
 

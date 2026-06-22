@@ -105,7 +105,6 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
     progress = out_dir / "_progress.log"
     total = len(papers)
     reset_progress(progress)
-    (out_dir / "_failures.log").unlink(missing_ok=True)
     log_status(f"batch_start papers={total} out_dir={out_dir}")
 
     mp_setting = max_parallel if max_parallel == "auto" else int(max_parallel)
