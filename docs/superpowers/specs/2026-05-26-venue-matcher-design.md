@@ -65,7 +65,6 @@ paperflow/
 │   ├── pyproject.toml
 │   ├── Dockerfile
 │   ├── docker-compose.yml
-│   ├── Makefile
 │   ├── cli.py                       # argparse entry; thin
 │   ├── compose.py                   # composition root: assembles object graph
 │   ├── orchestrator.py              # Orchestrator class (pool + dispatch)
@@ -322,28 +321,20 @@ services:
       --countries BR
 ```
 
-### 8.3 Makefile (the user-facing surface)
+### 8.3 Docker Compose (the user-facing surface)
 
-```makefile
-.PHONY: build run validate
+Docker Desktop must be open and the Docker engine must be running before the
+outer-agent process starts. The provider is explicit; there is no default.
 
-build:
-	docker compose build
-
-# Standalone validation: resolves extras, checks conflicts, exits without
-# launching any agent. Useful after editing .paperflow.local.toml.
-validate: build
-	docker compose run --rm matcher validate-skills
-
-run: build
-	docker compose run --rm matcher
+```bash
+docker compose run --build --rm matcher --api anthropic
+docker compose run --build --rm matcher --api openai
 ```
 
-End-user surface is **one command**: `make run` (which builds if needed and
-runs). `make validate` is the standalone check for the local extras config.
-Resource sizing happens automatically inside the container. The `run`
-entrypoint always validates first, so a bad config aborts before any
-agent spawns.
+The command builds the image if needed, starts `python -m harness.cli` inside
+the `matcher` container, and passes the chosen provider to the harness. The
+harness builds the outer-agent prompt, loads the selected plugin, and starts
+the outer agent. Resource sizing happens automatically inside the container.
 
 ## 9. SDK call (per worker)
 
@@ -616,7 +607,8 @@ Before declaring skill+app working:
 3. Confirm pool sizing log line on at least two machines / load profiles.
 4. Inject a forced failure (e.g. set `max_turns=2`) and confirm the outer
    loop iterates up to `max_iterations` and then logs to `_failures.log`.
-5. Confirm `make validate` rejects a synthetic skill-name collision.
+5. Confirm `docker compose run --build --rm matcher` without `--api` exits
+   with argparse code 2 instead of choosing a provider.
 
 ## 16. Open questions (deferred to implementation)
 
