@@ -18,13 +18,17 @@ and may exceed it — **use one session per paper**. Results are written to
 
 ### Developer (local, Docker)
 ```bash
-cp .env.example .env            # put your ANTHROPIC_API_KEY in it
+cp .env.example .env            # put the key for the API you will use in it
 mkdir -p papers && cp /path/to/*.docx papers/
-make run                        # builds + runs the outer agent over ./papers
+make run                        # defaults to --api anthropic
+docker compose run --rm matcher --input-dir /work/papers --soon-days 31 --api openai
 ```
-Per-paper output lands in `./results/<stem>/`. Tunables (dev-only, never visible
-to the agent): `MAX_PARALLEL` (default 1, or `auto`), `MAX_RALPH` (default 8),
-`INNER_MAX_TURNS` (default 50). Set them in `.env` or the shell.
+The dev harness accepts `--api anthropic` or `--api openai`, loading
+`academia-perks-claude` with `ANTHROPIC_API_KEY` or `academia-perks-openai`
+with `OPENAI_API_KEY`. Per-paper output lands in `./results/<stem>/`.
+Tunables (dev-only, never visible to the agent): `MAX_PARALLEL` (default 1, or
+`auto`), `MAX_RALPH` (default 8), `INNER_MAX_TURNS` (default 50). Set them in
+`.env` or the shell.
 
 ### Codex (local or repo marketplace)
 This repo also contains a Codex/OpenAI plugin copy at
