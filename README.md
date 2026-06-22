@@ -25,7 +25,11 @@ docker compose run --rm matcher --input-dir /work/papers --soon-days 31 --api op
 ```
 The dev harness accepts `--api anthropic` or `--api openai`, loading
 `academia-perks-claude` with `ANTHROPIC_API_KEY` or `academia-perks-openai`
-with `OPENAI_API_KEY`. Per-paper output lands in `./results/<stem>/`.
+with `OPENAI_API_KEY`. Each matcher run resets `./results/_progress.log` and
+replaces output for the paper stems in that run under `./results/<stem>/`.
+For Docker Desktop log inspection, omit `--rm` and pass `--name <container-name>`;
+the harness and matcher emit timestamped `[paperflow]` / `[venue-matcher]`
+status lines to stdout/stderr.
 Tunables (dev-only, never visible to the agent): `MAX_PARALLEL` (default 1, or
 `auto`), `MAX_RALPH` (default 8), `INNER_MAX_TURNS` (default 50). Set them in
 `.env` or the shell.
