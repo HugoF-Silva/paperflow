@@ -24,6 +24,11 @@ def test_build_outer_prompt_forbids_env_knobs():
     assert "MAX_PARALLEL" in prompt
     assert "only" in prompt.lower()
 
+def test_resolve_plugin_root_uses_isolated_claude_plugin(tmp_path):
+    assert outer_agent.resolve_plugin_root(tmp_path) == (
+        tmp_path / "plugins" / "academia-perks-claude"
+    )
+
 def test_stage_extra_skills_fatal_on_venue_matcher_collision(tmp_path):
     src = tmp_path / "venue-matcher"
     src.mkdir()

@@ -9,8 +9,7 @@ RUN apt-get update \
 WORKDIR /app
 COPY pyproject.toml README.md /app/
 COPY harness /app/harness
-COPY skills /app/skills
-COPY .claude-plugin /app/.claude-plugin
+COPY plugins/academia-perks-claude /app/plugins/academia-perks-claude
 RUN pip install --no-cache-dir -e /app
 
 ENV PYTHONUNBUFFERED=1 OUTPUT_DIR=/work/results

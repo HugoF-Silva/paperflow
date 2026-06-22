@@ -1,10 +1,17 @@
-"""The dev outer agent: an Agent SDK agent that loads the academia-perks plugin,
-uses the venue-matcher skill, and runs the bundled CLI via Bash. API keys are
+"""The dev outer agent: an Agent SDK agent that loads the Claude plugin, uses
+the venue-matcher skill, and runs the bundled CLI via Bash. API keys are
 formatted into its prompt so it can export them before running."""
 from __future__ import annotations
 
 import pathlib
 import shutil
+
+
+CLAUDE_PLUGIN_PATH = pathlib.Path("plugins") / "academia-perks-claude"
+
+
+def resolve_plugin_root(repo_root: pathlib.Path) -> pathlib.Path:
+    return pathlib.Path(repo_root) / CLAUDE_PLUGIN_PATH
 
 
 def build_outer_prompt(input_dir: str, soon_days: int, api_keys: dict[str, str]) -> str:
@@ -54,7 +61,7 @@ async def run(prompt: str, repo_root: pathlib.Path, extra_skill_paths=None,
 
     options = ClaudeAgentOptions(
         cwd=str(repo_root),
-        plugins=[{"type": "local", "path": str(repo_root)}],
+        plugins=[{"type": "local", "path": str(resolve_plugin_root(repo_root))}],
         setting_sources=["project"],
         allowed_tools=["Bash", "Read", "Glob", "Grep"],
         permission_mode="acceptEdits",

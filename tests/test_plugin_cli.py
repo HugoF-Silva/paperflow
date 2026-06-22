@@ -1,7 +1,9 @@
 import os, subprocess, sys, pathlib
 import cli
 
-CLI = pathlib.Path("skills/venue-matcher/scripts/venue_matcher/cli.py").resolve()
+CLI = pathlib.Path(
+    "plugins/academia-perks-claude/skills/venue-matcher/scripts/venue_matcher/cli.py"
+).resolve()
 
 def test_missing_api_keys():
     assert cli.missing_api_keys({}, ["ANTHROPIC_API_KEY"]) == ["ANTHROPIC_API_KEY"]

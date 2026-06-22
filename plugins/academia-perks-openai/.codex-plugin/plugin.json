@@ -1,0 +1,35 @@
+{
+  "name": "academia-perks-openai",
+  "version": "0.1.0",
+  "description": "Academic publishing workflows, starting with venue matching for papers.",
+  "author": {
+    "name": "Hugo Fernandes Silva"
+  },
+  "license": "MIT",
+  "keywords": [
+    "academia",
+    "publishing",
+    "venues",
+    "call-for-papers",
+    "research"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Academia Perks OpenAI",
+    "shortDescription": "Find fit-ranked publication venues for papers",
+    "longDescription": "Use Academia Perks to run academic publishing workflows. The first bundled workflow finds conferences, journals, magazines, tracks, and workshops that match a paper, split into open-now and opening-soon venues.",
+    "developerName": "Hugo Fernandes Silva",
+    "category": "Education & Research",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Find publication venues for this paper.",
+      "Where can I submit my paper?",
+      "Match venues for papers in this folder."
+    ],
+    "brandColor": "#2563EB"
+  }
+}
