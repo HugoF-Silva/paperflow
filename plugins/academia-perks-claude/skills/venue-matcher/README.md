@@ -8,5 +8,7 @@ into "open now" and "opening soon".
 This skill guides an agent to run the bundled program at
 `scripts/venue_matcher/cli.py`. It is invoked by asking ("find a venue for my
 paper") or via `/venue-matcher`. One paper at a time is the happy path on
-claude.ai (a single run targets the ~5-minute sandbox cap); more papers run
-sequentially. For batch/dev use, see the repo root README.
+claude.ai and codex (a single run targets the ~5-minute sandbox cap), and, 
+if you did not cloned the repository and run it through the harness command program, 
+more papers run sequentially instead of parallel. 
+For batch (i.e. dev use, harness command program) see the repo root README.
