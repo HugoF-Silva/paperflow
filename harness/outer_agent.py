@@ -1,6 +1,6 @@
 """The dev outer agent: an Agent SDK agent that loads the selected plugin, uses
-the venue-matcher skill, and runs the bundled CLI via Bash. API keys are
-formatted into its prompt so it can export them before running."""
+the venue-matcher skill, and runs the bundled CLI via Bash. API keys are kept
+in the inherited environment, not formatted into prompts or shell commands."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -41,9 +41,45 @@ _SECRET_ASSIGNMENT_RE = re.compile(r"((?:OPENAI|ANTHROPIC)_API_KEY=)(\S+)")
 _OPENAI_KEY_RE = re.compile(r"sk-[A-Za-z0-9_\-*]+")
 
 
+def _outer_execution_guidance(api_key_names) -> str:
+    key_names = tuple(api_key_names) or ("API_KEY",)
+    malformed = " or ".join(f"`{name}=... cd ...`" for name in key_names)
+    listed = ", ".join(key_names)
+    return (
+        "Shell/API-key execution rules:\n"
+        f"- The selected provider key is already available in the inherited "
+        f"environment as {listed}. Do not print, export, or reassign API keys; "
+        "run commands directly.\n"
+        f"- Do not prefix commands with one-command assignments like {malformed}; "
+        "do not include API-key values in commands.\n"
+        "- If a tool, command, authentication, dependency setup, or path step "
+        "fails, inspect the returned output and logs, retry in a bounded way "
+        "after changing something concrete, and try a practical workaround "
+        "before failing with the last error."
+    )
+
+
+EXECUTION_LOG_ENV = "PAPERFLOW_EXECUTION_LOG"
+
+
 def log_status(message: str) -> None:
     stamp = datetime.now(tz=timezone.utc).astimezone().isoformat(timespec="seconds")
-    print(f"[paperflow] {stamp} {message}", flush=True)
+    line = f"[paperflow] {stamp} {message}"
+    print(line, flush=True)
+    _append_execution_log(line)
+
+
+def _append_execution_log(line: str) -> None:
+    path = os.environ.get(EXECUTION_LOG_ENV)
+    if not path:
+        return
+    try:
+        target = pathlib.Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+    except OSError:
+        return
 
 
 def _safe_log_text(text: str, limit: int = 300, secrets=()) -> str:
@@ -80,14 +116,15 @@ def resolve_skill_path(repo_root: pathlib.Path, api: str = "anthropic") -> pathl
 
 
 def build_outer_prompt(input_dir: str, soon_days: int, api_keys: dict[str, str]) -> str:
-    keys = "\n".join(f"- {k}={v}" for k, v in api_keys.items())
+    keys = "\n".join(f"- {k}" for k in api_keys)
     return (
         "Use the venue-matcher skill to find publication venues for the papers.\n\n"
         f"Input directory (papers are here): {input_dir}\n"
         f"soon-days to pass to the program: {soon_days}\n\n"
-        "Before running the program, ensure these API keys are exported in the "
-        "environment (export each via Bash):\n"
+        "The selected provider API key is already available in the inherited "
+        "environment:\n"
         f"{keys}\n\n"
+        f"{_outer_execution_guidance(api_keys)}\n\n"
         "Then follow the skill: install deps, run the bundled CLI in the "
         "foreground with --input-dir and --soon-days and a long timeout so its "
         "stdout/stderr stream to container logs. Do not redirect matcher output "
@@ -135,7 +172,8 @@ def build_openai_outer_instructions(repo_root: pathlib.Path, extra_skill_paths=N
     parts = [
         "You are the dev outer agent. Follow the loaded venue-matcher skill exactly. "
         "Use run_shell as the Bash-equivalent tool, and use read_file, glob_files, "
-        "and grep_files for workspace inspection.",
+        "and grep_files for workspace inspection.\n\n"
+        f"{_outer_execution_guidance(('OPENAI_API_KEY',))}",
         f"Loaded plugin skill: {skill_path.as_posix()}\n\n{skill_text}",
     ]
     for src in _valid_extra_skill_paths(extra_skill_paths):
@@ -169,18 +207,6 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
     @function_tool
     def run_shell(command: str, timeout_seconds: int = 60) -> str:
         """Run a shell command from the repository root and return stdout/stderr."""
-        stripped = command.strip()
-        if stripped.startswith("export ") and "\n" not in stripped:
-            exported: list[str] = []
-            for assignment in stripped.removeprefix("export ").split():
-                if "=" not in assignment:
-                    return "export requires NAME=value assignments"
-                name, value = assignment.split("=", 1)
-                tool_env[name] = value.strip("'\"")
-                exported.append(name)
-            log_status("tool=run_shell exported_env=" + ",".join(exported))
-            return "exported " + ", ".join(exported)
-
         timeout = max(1, min(int(timeout_seconds or 60), 600))
         secrets = _api_secret_values(tool_env)
         log_status(
@@ -327,7 +353,8 @@ async def _run_anthropic(prompt: str, repo_root: pathlib.Path, extra_skill_paths
 
 async def _run_openai(prompt: str, repo_root: pathlib.Path, extra_skill_paths,
                       model: str) -> int:
-    from agents import Agent, Runner
+    from agents import Agent, ModelSettings, Runner
+    from openai.types.shared import Reasoning
 
     skill_path = resolve_skill_path(repo_root, "openai")
     tool_state: dict = {}
@@ -336,6 +363,7 @@ async def _run_openai(prompt: str, repo_root: pathlib.Path, extra_skill_paths,
         name="venue-matcher-outer",
         instructions=build_openai_outer_instructions(repo_root, extra_skill_paths),
         model=model,
+        model_settings=ModelSettings(reasoning=Reasoning(effort="high")),
         tools=build_openai_tools(repo_root, tool_state),
     )
     log_status("outer_agent provider=openai start")

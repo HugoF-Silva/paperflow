@@ -17,16 +17,31 @@ and may exceed it — **use one session per paper**. Results are written to
 `results/<paper>/ranking.{json,md}`.
 
 ### Developer (local, Docker)
+Docker Desktop must be open and the Docker engine must be running on your
+machine before starting the outer-agent process.
+
 ```bash
 cp .env.example .env            # put the key for the API you will use in it
+cp .paperflow.local.toml.example .paperflow.local.toml
 mkdir -p papers && cp /path/to/*.docx papers/
-make run                        # defaults to --api anthropic
-docker compose run --rm matcher --input-dir /work/papers --soon-days 31 --api openai
+docker compose run --build --rm matcher --api openai
 ```
-The dev harness accepts `--api anthropic` or `--api openai`, loading
-`academia-perks-claude` with `ANTHROPIC_API_KEY` or `academia-perks-openai`
-with `OPENAI_API_KEY`. Each matcher run resets `./results/_progress.log` and
-replaces output for the paper stems in that run under `./results/<stem>/`.
+The smallest successful command is
+`docker compose run --build --rm matcher --api openai` for OpenAI/Codex, or
+`docker compose run --build --rm matcher --api anthropic` for Claude. The
+provider must be explicit; there is no default. The harness loads
+`academia-perks-openai` with `OPENAI_API_KEY` or `academia-perks-claude` with
+`ANTHROPIC_API_KEY`.
+
+That command starts `python -m harness.cli` inside the `matcher` container. The
+harness builds the outer-agent prompt, loads the selected plugin, and starts the
+outer agent; the outer agent follows the `venue-matcher` skill and runs the
+bundled matcher program. Each harness run resets `./results/_execution.log`
+before the outer agent starts; that file mirrors the timestamped harness, tool,
+CLI, inner-agent, and batch status stream that also appears in container logs.
+`./results/_progress.log` is reserved for paper progress only: the harness clears
+it at run start, and the matcher replaces/appends paper progress once the batch
+begins.
 For Docker Desktop log inspection, omit `--rm` and pass `--name <container-name>`;
 the harness and matcher emit timestamped `[paperflow]` / `[venue-matcher]`
 status lines to stdout/stderr.
