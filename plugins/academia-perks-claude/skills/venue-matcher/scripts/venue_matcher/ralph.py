@@ -47,14 +47,18 @@ def _log_recap_result(out_dir: pathlib.Path, pass_no: int, max_ralph: int, recap
         )
 
 
-def _artifact_snapshot(out_dir: pathlib.Path) -> str:
+def _artifact_snapshot(out_dir: pathlib.Path) -> tuple[bool, str, str]:
     path = out_dir / "ranking.json"
     if not path.exists():
-        return "artifact=ranking.json status=missing"
+        return False, "artifact_missing", "artifact=ranking.json status=missing"
     try:
         data = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as exc:
-        return f"artifact=ranking.json status=unreadable error={type(exc).__name__}"
+        return (
+            False,
+            "artifact_unreadable",
+            f"artifact=ranking.json status=unreadable error={type(exc).__name__}",
+        )
 
     paper = data.get("paper") if isinstance(data, dict) else {}
     open_now = data.get("open_now") if isinstance(data, dict) else []
@@ -70,7 +74,7 @@ def _artifact_snapshot(out_dir: pathlib.Path) -> str:
         parts.append(f'top_venue="{_one_line(top, 80)}"')
     if isinstance(notes, str):
         parts.append(f"agent_notes_chars={len(notes)}")
-    return " ".join(parts)
+    return True, "success", " ".join(parts)
 
 
 async def _compact_recap(session_id: str | None, model: str) -> str:
@@ -138,13 +142,16 @@ def run_for_paper(
                     return RalphResult(False, pass_no, last_reason)
                 continue
             promised = has_promise(result.last_text)
+            artifact_ok, artifact_reason, artifact_snapshot = _artifact_snapshot(out_dir)
             log_status(
                 f"ralph_pass_finish paper={out_dir.name} pass={pass_no}/{max_ralph} "
                 f"promised={promised} output_chars={len(result.last_text or '')} "
-                f"{_artifact_snapshot(out_dir)}"
+                f"{artifact_snapshot}"
             )
-            if promised:
+            if promised and artifact_ok:
                 return RalphResult(True, pass_no, "success")
+            if promised:
+                last_reason = artifact_reason
             if pass_no < max_ralph:                # final pass's recap would be discarded
                 log_status(f"ralph_recap_start paper={out_dir.name} pass={pass_no}/{max_ralph}")
                 recap = await compact_recap(result.session_id, model)
