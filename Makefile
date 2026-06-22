@@ -13,4 +13,4 @@ down:
 	docker compose down -v
 
 prune:
-	docker system prune -f -a --volumes
+	docker system prune -f -a --volumes && docker buildx history rm --all
