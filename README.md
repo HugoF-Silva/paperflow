@@ -31,7 +31,9 @@ The smallest successful command is
 `docker compose run --build --rm matcher --api anthropic` for Claude. The
 provider must be explicit; there is no default. The harness loads
 `academia-perks-openai` with `OPENAI_API_KEY` or `academia-perks-claude` with
-`ANTHROPIC_API_KEY`.
+`ANTHROPIC_API_KEY`. `make run-openai` / `make run-anthropic` are shortcuts for
+the same two commands; `make down` runs `docker compose down -v` and
+`make prune` runs `docker system prune -f -a --volumes`.
 
 That command starts `python -m harness.cli` inside the `matcher` container. The
 harness builds the outer-agent prompt, loads the selected plugin, and starts the
