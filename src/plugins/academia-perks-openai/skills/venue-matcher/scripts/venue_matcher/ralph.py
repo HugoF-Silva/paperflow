@@ -11,7 +11,7 @@ import logging
 import pathlib
 from dataclasses import dataclass
 
-from logging_utils import log_status, one_line
+from logging_utils import log_status
 import prompts
 import inner_agent
 
@@ -36,15 +36,14 @@ def _one_line(value, limit: int = 160) -> str:
 
 
 def _log_recap_result(out_dir: pathlib.Path, pass_no: int, max_ralph: int, recap: str) -> None:
-    lines = [line.strip() for line in (recap or "").splitlines() if line.strip()]
-    if not lines:
+    recap = recap or ""
+    if not recap.strip():
         log_status(f"ralph_recap_result paper={out_dir.name} pass={pass_no}/{max_ralph} empty=True")
         return
-    for index, line in enumerate(lines, start=1):
-        log_status(
-            f"ralph_recap_bullet paper={out_dir.name} pass={pass_no}/{max_ralph} "
-            f"bullet={index}/{len(lines)} text=\"{one_line(line)}\""
-        )
+    log_status(
+        f"ralph_recap_result paper={out_dir.name} pass={pass_no}/{max_ralph} "
+        f"chars={len(recap)} text={json.dumps(recap)}"
+    )
 
 
 def _artifact_snapshot(out_dir: pathlib.Path) -> tuple[bool, str, str]:

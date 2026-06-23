@@ -64,43 +64,23 @@ def _content_text(content) -> str:
     return ""
 
 
-def _response_text(response) -> str:
-    chunks = []
-    for item in getattr(response, "output", None) or []:
-        chunks.append(_content_text(getattr(item, "content", None)))
-    return "\n".join(chunk for chunk in chunks if chunk)
-
-
-def _run_item_text(item) -> str:
-    raw = getattr(item, "raw_item", item)
-    return _content_text(getattr(raw, "content", None))
-
-
-def _raw_response_status(response) -> str:
-    status = getattr(response, "status", None)
-    incomplete = getattr(response, "incomplete_details", None)
-    if incomplete:
-        return f"{status}:{one_line(incomplete, 120)}"
-    return str(status or "unknown")
-
-
-def _log_input_turns(
+def _log_input_events(
     messages: list[dict],
     ralph_pass_no: int | None,
     ralph_max_passes: int | None,
 ) -> int:
-    turn_no = 0
+    event_no = 0
     for item in messages:
-        turn_no += 1
+        event_no += 1
         content = _input_content(item)
         role = item.get("role", "unknown")
         source = "recap_seed" if role == "assistant" else "paper_order"
         log_status(
-            f"inner_agent_turn {_pass_context(ralph_pass_no, ralph_max_passes)} "
-            f"agent_iteration=0 turn={turn_no} event=input_message role={role} "
+            f"inner_agent_event {_pass_context(ralph_pass_no, ralph_max_passes)} "
+            f"turn=0 event_no={event_no} event=input_message role={role} "
             f"source={source} chars={len(content)}"
         )
-    return turn_no
+    return event_no
 
 
 def _safe_path(root: pathlib.Path, raw_path: str) -> pathlib.Path:
@@ -258,57 +238,76 @@ async def run_pass(
     )
 
     input_messages = build_input_messages(seed_assistant, user_order)
-    turn_no = _log_input_turns(input_messages, ralph_pass_no, ralph_max_passes)
-    agent_iteration = 0
+    event_no = _log_input_events(input_messages, ralph_pass_no, ralph_max_passes)
+    turn_no = 0
+
     result = Runner.run_streamed(
         agent,
         input_messages,
         max_turns=max_turns,
     )
+
     async for event in result.stream_events():
-        turn_no += 1
+        current_turn = getattr(result, "current_turn", None)
+        if isinstance(current_turn, int) and current_turn > turn_no:
+            turn_no = current_turn
+
         event_type = getattr(event, "type", type(event).__name__)
-        active_iteration = agent_iteration + 1
         if event_type == "raw_response_event":
             data = getattr(event, "data", None)
-            raw_type = getattr(data, "type", type(data).__name__)
-            detail = ""
-            delta = getattr(data, "delta", None)
-            if isinstance(delta, str):
-                detail = f" delta_chars={len(delta)}"
+            raw_type = str(getattr(data, "type", type(data).__name__))
+            if raw_type not in {
+                "response.completed",
+                "response.failed",
+                "response.incomplete",
+            }:
+                continue
+            response = getattr(data, "response", None)
+            chunks = []
+            for item in getattr(response, "output", None) or []:
+                content = getattr(item, "content", None)
+                if isinstance(content, list):
+                    for part in content:
+                        event_no += 1
+                        event_type = getattr(part, "type", None)
+                        if event_type is None and isinstance(part, dict):
+                            event_type = part.get("type")
+                        log_status(
+                            f"inner_agent_event {context} turn={turn_no} "
+                            f"event_no={event_no} "
+                            f"event={event_type or type(part).__name__}"
+                        )
+                else:
+                    event_no += 1
+                    log_status(
+                        f"inner_agent_event {context} turn={turn_no} "
+                        f"event_no={event_no} "
+                        f"event={getattr(item, 'type', type(item).__name__)}"
+                    )
+                text = _content_text(content)
+                if text:
+                    chunks.append(text)
+            assistant_text = "\n".join(chunks)
             log_status(
-                f"inner_agent_turn {context} agent_iteration={active_iteration} "
-                f"turn={turn_no} event={raw_type}{detail}"
+                f"inner_agent_turn_finish {context} turn={turn_no} "
+                f"event=ModelResponse output_chars={len(assistant_text)} "
+                f'output_preview="{one_line(assistant_text)}"'
             )
-            if raw_type in {"response.completed", "response.failed", "response.incomplete"}:
-                agent_iteration += 1
-                response = getattr(data, "response", None)
-                text = _response_text(response)
-                status = _raw_response_status(response)
-                log_status(
-                    f"inner_agent_iteration_finish {context} "
-                    f"agent_iteration={agent_iteration} turn={turn_no} "
-                    f"stop_event={raw_type} status={status} output_chars={len(text)} "
-                    f'output_preview="{one_line(text)}"'
-                )
         elif event_type == "run_item_stream_event":
-            item_text = _run_item_text(getattr(event, "item", None))
-            name = getattr(event, "name", "unknown")
-            detail = f" item_output_chars={len(item_text)}" if item_text else ""
+            item = getattr(event, "item", None)
+            item_type = type(item).__name__ if item is not None else type(event).__name__
+            if item_type != "ToolCallOutputItem":
+                continue
+            event_no += 1
             log_status(
-                f"inner_agent_turn {context} agent_iteration={active_iteration} "
-                f"turn={turn_no} event={name}{detail}"
-            )
-        else:
-            log_status(
-                f"inner_agent_turn {context} agent_iteration={active_iteration} "
-                f"turn={turn_no} event={event_type}"
+                f"inner_agent_event {context} turn={turn_no} "
+                f"event_no={event_no} event={item_type}"
             )
 
     last_text = str(result.final_output or "")
     log_status(
-        f"inner_agent_pass_finish {context} agent_iterations={agent_iteration} "
-        f"turns={turn_no} output_chars={len(last_text)} "
+        f"inner_agent_pass_finish {context} turns={turn_no} events={event_no} "
+        f"output_chars={len(last_text)} "
         f'output_preview="{one_line(last_text)}"'
     )
     return PassResult(

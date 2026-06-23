@@ -46,24 +46,24 @@ def _message_content(item: dict) -> str:
     return str(message.get("content") or "")
 
 
-def _log_input_turns(
+def _log_input_events(
     messages: list[dict],
     ralph_pass_no: int | None,
     ralph_max_passes: int | None,
 ) -> int:
-    turn_no = 0
+    event_no = 0
     for item in messages:
-        turn_no += 1
+        event_no += 1
         message = item.get("message") or {}
         role = message.get("role", item.get("type", "unknown"))
         source = "recap_seed" if role == "assistant" else "paper_order"
         content = _message_content(item)
         log_status(
-            f"inner_agent_turn {_pass_context(ralph_pass_no, ralph_max_passes)} "
-            f"agent_iteration=0 turn={turn_no} event=input_message role={role} "
+            f"inner_agent_event {_pass_context(ralph_pass_no, ralph_max_passes)} "
+            f"turn=0 event_no={event_no} event=input_message role={role} "
             f"source={source} chars={len(content)}"
         )
-    return turn_no
+    return event_no
 
 
 async def run_pass(
@@ -101,8 +101,8 @@ async def run_pass(
         f"inner_agent_pass_start {context} model={model} max_turns={max_turns} "
         f"recap_seeded={bool(seed_assistant)}"
     )
-    turn_no = _log_input_turns(messages, ralph_pass_no, ralph_max_passes)
-    agent_iteration = 0
+    event_no = _log_input_events(messages, ralph_pass_no, ralph_max_passes)
+    turn_no = 0
 
     async def _gen():
         for m in messages:
@@ -113,46 +113,49 @@ async def run_pass(
     async with ClaudeSDKClient(options) as client:
         await client.query(_gen())
         async for message in client.receive_response():
-            turn_no += 1
             message_type = type(message).__name__
             if isinstance(message, SystemMessage) and getattr(message, "subtype", "") == "init":
-                session_id = message.data.get("session_id")
+                session_id = (getattr(message, "data", None) or {}).get("session_id")
+                event_no += 1
                 log_status(
-                    f"inner_agent_turn {context} agent_iteration={agent_iteration + 1} "
-                    f"turn={turn_no} event={message_type} subtype=init session_id={session_id}"
+                    f"inner_agent_event {context} turn={turn_no} "
+                    f"event_no={event_no} event={message_type}"
                 )
             elif isinstance(message, AssistantMessage):
+                turn_no += 1
                 chunks = []
                 for block in message.content:
+                    event_no += 1
+                    log_status(
+                        f"inner_agent_event {context} turn={turn_no} "
+                        f"event_no={event_no} event={type(block).__name__}"
+                    )
                     text = getattr(block, "text", None)
                     if isinstance(text, str):
                         last_text = text
                         chunks.append(text)
                 assistant_text = "\n".join(chunks)
                 log_status(
-                    f"inner_agent_turn {context} agent_iteration={agent_iteration + 1} "
-                    f"turn={turn_no} event={message_type} output_chars={len(assistant_text)} "
+                    f"inner_agent_turn_finish {context} turn={turn_no} "
+                    f"event={message_type} output_chars={len(assistant_text)} "
                     f'output_preview="{one_line(assistant_text)}"'
                 )
             elif isinstance(message, ResultMessage):
                 last_text = message.result or last_text
-                agent_iteration += 1
-                subtype = getattr(message, "subtype", "unknown")
+                event_no += 1
                 log_status(
-                    f"inner_agent_iteration_finish {context} "
-                    f"agent_iteration={agent_iteration} turn={turn_no} "
-                    f"stop_event={message_type} status={subtype} "
-                    f"output_chars={len(last_text or '')} "
-                    f'output_preview="{one_line(last_text)}"'
+                    f"inner_agent_event {context} turn={turn_no} "
+                    f"event_no={event_no} event={message_type}"
                 )
             else:
+                event_no += 1
                 log_status(
-                    f"inner_agent_turn {context} agent_iteration={agent_iteration + 1} "
-                    f"turn={turn_no} event={message_type}"
+                    f"inner_agent_event {context} turn={turn_no} "
+                    f"event_no={event_no} event={message_type}"
                 )
     log_status(
-        f"inner_agent_pass_finish {context} agent_iterations={agent_iteration} "
-        f"turns={turn_no} output_chars={len(last_text or '')} "
+        f"inner_agent_pass_finish {context} turns={turn_no} events={event_no} "
+        f"output_chars={len(last_text or '')} "
         f'output_preview="{one_line(last_text)}"'
     )
     return PassResult(session_id=session_id, last_text=last_text)
