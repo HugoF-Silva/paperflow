@@ -5,9 +5,13 @@
 # local extras config (per-machine, not in git)
 .paperflow.local.toml
 
-# runtime artifacts
+# runtime artifacts. papers/ and results/ are bind-mounted into the matcher
+# container. Keep the empty dirs, ignore their local contents.
 input_examples/
-results/
+papers/*
+!papers/.gitkeep
+results/*
+!results/.gitkeep
 .runtime/
 .claude/
 

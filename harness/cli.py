@@ -1,6 +1,6 @@
 """Dev harness entry. Parses dev flags, sets the env-only knobs (MAX_RALPH,
 MAX_PARALLEL, INNER_MAX_TURNS) that the outer agent must NOT see, builds the
-outer agent's prompt (with the shared API key), and runs it."""
+outer agent's prompt with the selected API key value, and runs it."""
 from __future__ import annotations
 
 import argparse
@@ -18,7 +18,7 @@ EXECUTION_LOG_NAME = "_execution.log"
 
 def parse_args(argv=None) -> argparse.Namespace:
     p = argparse.ArgumentParser(prog="academia-perks-harness")
-    p.add_argument("--input-dir", type=pathlib.Path, default=pathlib.Path("/work/papers"))
+    p.add_argument("--input-dir", "--input_dir", dest="input_dir", type=pathlib.Path)
     p.add_argument("--soon-days", type=int, default=31)
     p.add_argument("--max-ralph", type=int, default=int(os.environ.get("MAX_RALPH", "8")))
     p.add_argument("--max-parallel", default=os.environ.get("MAX_PARALLEL", "1"))          # int-as-str or "auto"
@@ -100,7 +100,11 @@ def main(argv=None) -> int:
     api_keys = {k: os.environ[k] for k in required_keys}
     extras = list(ns.extra_skill_paths) + read_local_extras(ns.local_config)
 
-    prompt = outer_agent.build_outer_prompt(str(ns.input_dir), ns.soon_days, api_keys)
+    prompt = outer_agent.build_outer_prompt(
+        str(ns.input_dir) if ns.input_dir is not None else None,
+        ns.soon_days,
+        api_keys,
+    )
     rc = asyncio.run(outer_agent.run(prompt, ns.repo_root, extras, api=ns.api))
     if rc:
         outer_agent.log_status(f"harness_cli_failed outer_agent_exit_code={rc}")

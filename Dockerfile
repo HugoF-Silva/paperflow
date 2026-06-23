@@ -14,4 +14,3 @@ COPY plugins/academia-perks-openai /app/plugins/academia-perks-openai
 RUN pip install --no-cache-dir -e /app
 
 ENV PYTHONUNBUFFERED=1 OUTPUT_DIR=/work/results
-ENTRYPOINT ["python", "-m", "harness.cli"]

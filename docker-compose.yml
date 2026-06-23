@@ -1,8 +1,17 @@
 services:
   matcher:
     build: .
+    entrypoint:
+      - python
+      - -m
+      - harness.cli
+      - --input-dir
+      - /app/papers
     volumes:
-      - ./papers:/work/papers:ro
+      - type: bind
+        source: ./papers
+        target: /app/papers
+        read_only: true
       - ./results:/work/results
       - ./.paperflow.local.toml:/app/.paperflow.local.toml:ro
     environment:

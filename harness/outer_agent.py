@@ -1,6 +1,7 @@
 """The dev outer agent: an Agent SDK agent that loads the selected plugin, uses
-the venue-matcher skill, and runs the bundled CLI via Bash. API keys are kept
-in the inherited environment, not formatted into prompts or shell commands."""
+the venue-matcher skill, and runs the bundled CLI via Bash. The harness reads
+provider API keys from its environment and gives the selected key value to the
+outer agent prompt; the loaded skill maps that value to its provider env var."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -41,17 +42,20 @@ _SECRET_ASSIGNMENT_RE = re.compile(r"((?:OPENAI|ANTHROPIC)_API_KEY=)(\S+)")
 _OPENAI_KEY_RE = re.compile(r"sk-[A-Za-z0-9_\-*]+")
 
 
-def _outer_execution_guidance(api_key_names) -> str:
-    key_names = tuple(api_key_names) or ("API_KEY",)
-    malformed = " or ".join(f"`{name}=... cd ...`" for name in key_names)
-    listed = ", ".join(key_names)
+def _format_api_key_value_lines(api_keys: dict[str, str]) -> str:
+    values = tuple(value for value in api_keys.values() if value)
+    return "\n".join(f"- API key value: {value}" for value in values)
+
+
+def _outer_execution_guidance(_api_key_names=None) -> str:
     return (
         "Shell/API-key execution rules:\n"
-        f"- The selected provider key is already available in the inherited "
-        f"environment as {listed}. Do not print, export, or reassign API keys; "
-        "run commands directly.\n"
-        f"- Do not prefix commands with one-command assignments like {malformed}; "
-        "do not include API-key values in commands.\n"
+        "- If the venue-matcher skill requires an API key, use the literal API "
+        "key value from the task prompt and set the environment variable "
+        "required by the loaded venue-matcher skill before running the script.\n"
+        "- Do not pass the API key as a venue-matcher command flag, argument, "
+        "or file path.\n"
+        "- Do not print the API key. Avoid echoing commands that contain it.\n"
         "- If a tool, command, authentication, dependency setup, or path step "
         "fails, inspect the returned output and logs, retry in a bounded way "
         "after changing something concrete, and try a practical workaround "
@@ -80,6 +84,28 @@ def _append_execution_log(line: str) -> None:
             fh.write(line + "\n")
     except OSError:
         return
+
+
+def _append_execution_text(text: str) -> None:
+    path = os.environ.get(EXECUTION_LOG_ENV)
+    if not path:
+        return
+    try:
+        target = pathlib.Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as fh:
+            fh.write(text)
+            if not text.endswith("\n"):
+                fh.write("\n")
+    except OSError:
+        return
+
+
+def _emit_agent_output(output) -> None:
+    text = str(output or "")
+    print(text, flush=True)
+    if text:
+        _append_execution_text(text)
 
 
 def _safe_log_text(text: str, limit: int = 300, secrets=()) -> str:
@@ -115,21 +141,34 @@ def resolve_skill_path(repo_root: pathlib.Path, api: str = "anthropic") -> pathl
     return resolve_plugin_root(repo_root, api) / "skills" / "venue-matcher" / "SKILL.md"
 
 
-def build_outer_prompt(input_dir: str, soon_days: int, api_keys: dict[str, str]) -> str:
-    keys = "\n".join(f"- {k}" for k in api_keys)
+def build_outer_prompt(input_dir: str | None, soon_days: int, api_keys: dict[str, str]) -> str:
+    key_values = _format_api_key_value_lines(api_keys)
+    input_section = (
+        f"Input directory (papers are here): {input_dir}\n"
+        if input_dir
+        else ""
+    )
+    missing_papers_instruction = (
+        "If the input directory has no papers, say so and stop. "
+        if input_dir
+        else ""
+    )
     return (
         "Use the venue-matcher skill to find publication venues for the papers.\n\n"
-        f"Input directory (papers are here): {input_dir}\n"
+        f"{input_section}"
         f"soon-days to pass to the program: {soon_days}\n\n"
-        "The selected provider API key is already available in the inherited "
-        "environment:\n"
-        f"{keys}\n\n"
+        "API configuration for this run:\n"
+        f"{key_values}\n"
+        "If the venue-matcher skill requires an API key, use this literal API "
+        "key value and set the environment variable required by the loaded "
+        "venue-matcher skill. Do not pass the API key as a venue-matcher "
+        "command flag. Do not print it.\n\n"
         f"{_outer_execution_guidance(api_keys)}\n\n"
         "Then follow the skill: install deps, run the bundled CLI in the "
         "foreground with --input-dir and --soon-days and a long timeout so its "
         "stdout/stderr stream to container logs. Do not redirect matcher output "
         "away from stdout/stderr. Report the result files "
-        "plus a human-friendly summary. If the input directory has no papers, say so and stop. "
+        f"plus a human-friendly summary. {missing_papers_instruction}"
         "Pass ONLY --input-dir and --soon-days to the program; never set "
         "MAX_PARALLEL, INNER_MAX_TURNS, or any other environment-variable knob "
         "— those are fixed by the developer and are not yours to change."
@@ -344,7 +383,7 @@ async def _run_anthropic(prompt: str, repo_root: pathlib.Path, extra_skill_paths
     async for message in query(prompt=prompt, options=options):
         log_status(f"outer_agent provider=anthropic event={type(message).__name__}")
         if isinstance(message, ResultMessage):
-            print(message.result or "", flush=True)
+            _emit_agent_output(message.result)
             rc = 0 if getattr(message, "subtype", "") == "success" else 1
     log_status(f"outer_agent provider=anthropic finish exit_code={rc}")
     return rc
@@ -369,7 +408,7 @@ async def _run_openai(prompt: str, repo_root: pathlib.Path, extra_skill_paths,
     result = await Runner.run(agent, prompt, max_turns=600)
     rc = int(tool_state.get("matcher_exit_code", 0) or 0)
     log_status(f"outer_agent provider=openai finish exit_code={rc}")
-    print(str(result.final_output or ""), flush=True)
+    _emit_agent_output(result.final_output)
     return rc
 
 

@@ -9,9 +9,9 @@ and "opening soon".
 ## Ways to use it
 
 ### Layperson (claude.ai)
-Toggle the `academia-perks-claude` plugin, set `ANTHROPIC_API_KEY` in your
-environment, upload ONE paper, and ask: "use venue-matcher to find a venue for
-my paper."
+Toggle the `academia-perks-claude` plugin, upload ONE paper, ask "use
+venue-matcher to find a venue for my paper", and provide the API key value if
+the skill asks for it.
 A single paper targets the ~5-minute sandbox limit. More papers run sequentially
 and may exceed it — **use one session per paper**. Results are written to
 `results/<paper>/ranking.{json,md}`.
@@ -23,24 +23,31 @@ machine before starting the outer-agent process.
 ```bash
 cp .env.example .env            # put the key for the API you will use in it
 cp .paperflow.local.toml.example .paperflow.local.toml
-mkdir -p papers && cp /path/to/*.docx papers/
-docker compose run --build --rm matcher --api openai
+# put, copy, symlink, or mount .docx files under ./papers
+make run-openai
 ```
-The smallest successful command is
-`docker compose run --build --rm matcher --api openai` for OpenAI/Codex, or
-`docker compose run --build --rm matcher --api anthropic` for Claude. The
-provider must be explicit; there is no default. The harness loads
+The smallest developer command is `make run-openai` for OpenAI/Codex, or
+`make run-anthropic` for Claude. The provider must be explicit; there is no
+default. The Make shortcuts always use the host `./papers` folder. If your
+papers live elsewhere, put them there by copy, symlink, junction, or host mount.
+Docker Compose mounts that folder read-only and passes the matching container path
+`/app/papers` to the in-container harness through `docker-compose.yml`; there is
+no `INPUT_DIR` make variable to set. The harness loads
 `academia-perks-openai` with `OPENAI_API_KEY` or `academia-perks-claude` with
-`ANTHROPIC_API_KEY`. `make run-openai` / `make run-anthropic` are shortcuts for
-the same two commands; `make down` runs `docker compose down -v` and
-`make prune` runs `docker system prune -f -a --volumes`.
+`ANTHROPIC_API_KEY`. `make down` runs `docker compose down -v` and `make prune`
+runs `docker system prune -f -a --volumes`.
 
 That command starts `python -m harness.cli` inside the `matcher` container. The
 harness builds the outer-agent prompt, loads the selected plugin, and starts the
 outer agent; the outer agent follows the `venue-matcher` skill and runs the
-bundled matcher program. Each harness run resets `./results/_execution.log`
+bundled matcher program. The prompt includes the selected API key value; the
+loaded skill decides whether to set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
+before running the matcher. Each harness run resets `./results/_execution.log`
 before the outer agent starts; that file mirrors the timestamped harness, tool,
-CLI, inner-agent, and batch status stream that also appears in container logs.
+CLI, inner-agent, and batch status stream, plus the final outer-agent response,
+that also appears in container logs.
+The matcher consumes only `.docx` files from the selected input directory and
+ignores other file types.
 
 This split is intentional: `harness/` is just one possible **outer agent** —
 our own dev/Docker implementation of the generic contract described in the
@@ -82,9 +89,10 @@ codex plugin add academia-perks-openai@paperflow
 For a published Git repo, use the GitHub shorthand or Git URL instead of the
 local path. This makes the plugin available to users who add that marketplace;
 it does not publish the plugin to Codex's public OpenAI-curated directory.
-The Codex plugin copy uses `OPENAI_API_KEY`, `openai-agents`, and defaults to
-`gpt-5.4-mini`; the Claude plugin copy lives at
-`plugins/academia-perks-claude/` and uses `ANTHROPIC_API_KEY`.
+The Codex plugin copy sets the provided API key value as `OPENAI_API_KEY`, uses
+`openai-agents`, and defaults to `gpt-5.4-mini`; the Claude plugin copy lives at
+`plugins/academia-perks-claude/` and sets the provided API key value as
+`ANTHROPIC_API_KEY`.
 
 ## How it works
 An **outer agent** runs the bundled `venue_matcher` program; the program spawns
