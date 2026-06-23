@@ -26,7 +26,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--extra-skill-paths", action="append", default=[], type=pathlib.Path)
     p.add_argument("--api", choices=outer_agent.API_CHOICES, required=True)
     p.add_argument("--local-config", type=pathlib.Path,
-                   default=pathlib.Path("/app/.paperflow.local.toml"))
+                   default=pathlib.Path("/app/ops/.paperflow.local.toml"))
     p.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path("/app/src"))
     return p.parse_args(argv)
 
@@ -79,7 +79,7 @@ def initialize_harness_logs(ns: argparse.Namespace, env=os.environ) -> pathlib.P
 
 def main(argv=None) -> int:
     ns = parse_args(argv)
-    load_dotenv(ns.repo_root / ".env")
+    load_dotenv(ns.local_config.with_name(".env"))
     execution_log = initialize_harness_logs(ns)
     outer_agent.log_status(
         f"harness_cli_start api={ns.api} input_dir={ns.input_dir} "

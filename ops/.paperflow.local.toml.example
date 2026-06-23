@@ -1,4 +1,4 @@
 # Per-machine local config for the dev harness (gitignored when copied to
-# .paperflow.local.toml). One skill path per entry; equips the OUTER agent only.
+# ops/.paperflow.local.toml). One skill path per entry; equips the OUTER agent only.
 [extras]
 paths = []

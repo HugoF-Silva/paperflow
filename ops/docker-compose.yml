@@ -1,6 +1,8 @@
 services:
   matcher:
-    build: .
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile
     entrypoint:
       - python
       - -m
@@ -8,10 +10,11 @@ services:
       - --input-dir
       - /app/src/papers
     volumes:
-      - ./src:/app/src
-      - ./.paperflow.local.toml:/app/.paperflow.local.toml:ro
+      - ../src:/app/src
+      - ./.env:/app/ops/.env:ro
+      - ./.paperflow.local.toml:/app/ops/.paperflow.local.toml:ro
+    env_file:
+      - .env
     environment:
-      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
-      OPENAI_API_KEY: ${OPENAI_API_KEY}
       MAX_PARALLEL: ${MAX_PARALLEL:-1}
       MAX_RALPH: ${MAX_RALPH:-8}

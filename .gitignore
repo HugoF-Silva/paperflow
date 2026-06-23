@@ -1,9 +1,9 @@
 # env
-.env
-.env.local
+ops/.env
+ops/.env.local
 
 # local extras config (per-machine, not in git)
-.paperflow.local.toml
+ops/.paperflow.local.toml
 
 # runtime artifacts. ./src is bind-mounted into the matcher container so its tree
 # mirrors the host; src/ always exists (it holds harness + plugins), so the mount
