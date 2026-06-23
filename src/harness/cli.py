@@ -111,6 +111,7 @@ def main(argv=None) -> int:
         ns.soon_days,
         api_keys,
         model,
+        ns.repo_root,
     )
     rc = asyncio.run(outer_agent.run(prompt, ns.repo_root, extras, model=model, api=ns.api))
     if rc:

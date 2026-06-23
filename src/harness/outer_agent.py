@@ -40,8 +40,11 @@ API_CHOICES = tuple(API_CONFIGS)
 venue_matcher_model_env = "VENUE_MATCHER_MODEL"
 _TOOL_OUTPUT_LIMIT = 20_000
 _FILE_READ_LIMIT = 500_000
+_LOG_POLL_RESULT_LIMIT = 4_000
 _MAX_LOGGED_TOOL_LINES = 200
 _MAX_LOGGED_TOOL_LINE_CHARS = 1_000
+_AGENT_LOG_REFERENCES = ("_execution.log", "_progress.log", "vm.out")
+_AGENT_LOG_LINE_PREFIXES = ("[venue-matcher] ", "[paperflow] ")
 _SECRET_ASSIGNMENT_RE = re.compile(r"((?:OPENAI|ANTHROPIC)_API_KEY=)(\S+)")
 _OPENAI_KEY_RE = re.compile(r"sk-[A-Za-z0-9_\-*]+")
 
@@ -128,6 +131,15 @@ def _safe_log_text(text: str, limit: int = 300, secrets=()) -> str:
     return _truncate(cleaned, limit)
 
 
+def _references_agent_log(text: str) -> bool:
+    normalized = str(text or "").replace("\\", "/").lower()
+    return any(name in normalized for name in _AGENT_LOG_REFERENCES)
+
+
+def _is_agent_log_line(text: str) -> bool:
+    return str(text or "").startswith(_AGENT_LOG_LINE_PREFIXES)
+
+
 def _api_secret_values(env: dict[str, str]) -> list[str]:
     return [
         value for key in ("OPENAI_API_KEY", "ANTHROPIC_API_KEY")
@@ -164,6 +176,7 @@ def build_outer_prompt(
     soon_days: int,
     api_keys: dict[str, str],
     model: str,
+    cwd: pathlib.Path,
 ) -> str:
     key_values = _format_api_key_value_lines(api_keys)
     input_section = (
@@ -178,6 +191,9 @@ def build_outer_prompt(
     )
     return (
         "Use the venue-matcher skill to find publication venues for the papers.\n\n"
+        f"Shell/Bash current working directory: {cwd}\n"
+        "When using shell, glob, grep, or file tools, paths which aren't relative might not work "
+        "use the relative or not, find out what works.\n\n"
         f"{input_section}"
         f"soon-days to pass to the program: {soon_days}\n\n"
         "API configuration for this run:\n"
@@ -262,6 +278,10 @@ def _truncate(text: str, limit: int = _TOOL_OUTPUT_LIMIT) -> str:
     return text[:limit] + f"\n...[truncated {len(text) - limit} chars]"
 
 
+def _log_poll_limit(enabled: bool) -> int:
+    return _LOG_POLL_RESULT_LIMIT if enabled else _TOOL_OUTPUT_LIMIT
+
+
 def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
     from agents import function_tool
 
@@ -274,12 +294,14 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
         """Run a shell command from the repository root and return stdout/stderr."""
         timeout = max(1, min(int(timeout_seconds or 60), 600))
         secrets = _api_secret_values(tool_env)
+        log_poll = _references_agent_log(command)
         log_status(
             f"tool=run_shell start timeout={timeout}s "
             f"command={_safe_log_text(command, secrets=secrets)}"
         )
         output_lines: list[str] = []
         logged_lines = 0
+        omitted_logged_agent_lines = 0
 
         proc = subprocess.Popen(
             command,
@@ -293,10 +315,15 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
         )
 
         def read_output() -> None:
-            nonlocal logged_lines
+            nonlocal logged_lines, omitted_logged_agent_lines
             assert proc.stdout is not None
             for line in proc.stdout:
                 output_lines.append(line)
+                if log_poll:
+                    continue
+                if _is_agent_log_line(line):
+                    omitted_logged_agent_lines += 1
+                    continue
                 if logged_lines < _MAX_LOGGED_TOOL_LINES:
                     log_status(
                         "tool=run_shell output "
@@ -317,11 +344,32 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
             returncode = proc.wait()
             reader.join(timeout=5)
             output = "".join(output_lines)
+            if log_poll and output:
+                log_status(
+                    f"tool=run_shell output log_poll_truncated=true stdout_chars={len(output)}"
+                )
+            if omitted_logged_agent_lines:
+                log_status(
+                    "tool=run_shell output "
+                    f"omitted_logged_agent_lines={omitted_logged_agent_lines}"
+                )
             log_status(f"tool=run_shell timeout timeout={timeout}s output_chars={len(output)}")
-            return _truncate(f"timed out after {timeout}s\n{output}")
+            return _truncate(
+                f"timed out after {timeout}s\n{output}",
+                _log_poll_limit(log_poll),
+            )
         reader.join(timeout=5)
 
         output = "".join(output_lines)
+        if log_poll and output:
+            log_status(
+                f"tool=run_shell output log_poll_truncated=true stdout_chars={len(output)}"
+            )
+        if omitted_logged_agent_lines:
+            log_status(
+                "tool=run_shell output "
+                f"omitted_logged_agent_lines={omitted_logged_agent_lines}"
+            )
         if "venue_matcher/cli.py" in command:
             state["matcher_exit_code"] = returncode
         log_status(
@@ -331,14 +379,15 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
         chunks = [f"exit_code={returncode}"]
         if output:
             chunks.append("stdout:\n" + output)
-        return _truncate("\n".join(chunks))
+        return _truncate("\n".join(chunks), _log_poll_limit(log_poll))
 
     @function_tool
     def read_file(path: str) -> str:
         """Read a UTF-8 text file inside the repository root."""
         log_status(f"tool=read_file path={_safe_log_text(path, 200)}")
         text = _safe_path(root, path).read_text(encoding="utf-8")
-        return _truncate(text, _FILE_READ_LIMIT)
+        limit = _LOG_POLL_RESULT_LIMIT if _references_agent_log(path) else _FILE_READ_LIMIT
+        return _truncate(text, limit)
 
     @function_tool
     def glob_files(pattern: str) -> str:
@@ -370,6 +419,7 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
         except (re.error, ValueError) as exc:
             return f"invalid grep input: {exc}"
         lines: list[str] = []
+        log_poll = _references_agent_log(path_glob)
         for path in paths:
             if not path.is_file():
                 continue
@@ -378,12 +428,13 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
                 rel = path.resolve().relative_to(root).as_posix()
             except (OSError, UnicodeDecodeError, ValueError):
                 continue
+            log_poll = log_poll or _references_agent_log(rel)
             for number, line in enumerate(text.splitlines(), start=1):
                 if regex.search(line):
                     lines.append(f"{rel}:{number}:{line[:300]}")
                     if len(lines) >= 200:
-                        return "\n".join(lines)
-        return "\n".join(lines)
+                        return _truncate("\n".join(lines), _log_poll_limit(log_poll))
+        return _truncate("\n".join(lines), _log_poll_limit(log_poll))
 
     return [run_shell, read_file, glob_files, grep_files]
 
