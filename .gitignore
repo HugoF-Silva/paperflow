@@ -5,13 +5,14 @@
 # local extras config (per-machine, not in git)
 .paperflow.local.toml
 
-# runtime artifacts. papers/ and results/ are bind-mounted into the matcher
-# container. Keep the empty dirs, ignore their local contents.
+# runtime artifacts. ./src is bind-mounted into the matcher container so its tree
+# mirrors the host; src/ always exists (it holds harness + plugins), so the mount
+# never has to auto-create a missing host dir. src/papers/ is the input drop, kept
+# present via a .gitkeep; src/results/ is created on the fly and never tracked.
 input_examples/
-papers/*
-!papers/.gitkeep
-results/*
-!results/.gitkeep
+src/papers/*
+!src/papers/.gitkeep
+src/results/
 .runtime/
 .claude/
 

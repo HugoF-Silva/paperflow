@@ -6,13 +6,9 @@ services:
       - -m
       - harness.cli
       - --input-dir
-      - /app/papers
+      - /app/src/papers
     volumes:
-      - type: bind
-        source: ./papers
-        target: /app/papers
-        read_only: true
-      - ./results:/work/results
+      - ./src:/app/src
       - ./.paperflow.local.toml:/app/.paperflow.local.toml:ro
     environment:
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}

@@ -8,7 +8,7 @@
       "name": "academia-perks-openai",
       "source": {
         "source": "local",
-        "path": "./plugins/academia-perks-openai"
+        "path": "./src/plugins/academia-perks-openai"
       },
       "policy": {
         "installation": "AVAILABLE",

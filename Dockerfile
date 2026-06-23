@@ -8,9 +8,8 @@ RUN apt-get update \
 
 WORKDIR /app
 COPY pyproject.toml README.md /app/
-COPY harness /app/harness
-COPY plugins/academia-perks-claude /app/plugins/academia-perks-claude
-COPY plugins/academia-perks-openai /app/plugins/academia-perks-openai
+COPY src /app/src
 RUN pip install --no-cache-dir -e /app
 
-ENV PYTHONUNBUFFERED=1 OUTPUT_DIR=/work/results
+ENV PYTHONUNBUFFERED=1 OUTPUT_DIR=/app/src/results PYTHONPATH=/app/src
+WORKDIR /app/src

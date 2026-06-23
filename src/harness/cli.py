@@ -12,7 +12,7 @@ import tomllib
 
 from harness import outer_agent
 
-DEFAULT_OUTPUT_DIR = pathlib.Path("/work/results")
+DEFAULT_OUTPUT_DIR = pathlib.Path("/app/src/results")
 EXECUTION_LOG_NAME = "_execution.log"
 
 
@@ -27,7 +27,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--api", choices=outer_agent.API_CHOICES, required=True)
     p.add_argument("--local-config", type=pathlib.Path,
                    default=pathlib.Path("/app/.paperflow.local.toml"))
-    p.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path("/app"))
+    p.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path("/app/src"))
     return p.parse_args(argv)
 
 

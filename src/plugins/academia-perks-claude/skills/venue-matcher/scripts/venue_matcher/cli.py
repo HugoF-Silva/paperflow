@@ -11,8 +11,8 @@ import sys
 from logging_utils import log_status
 import runner
 
-REQUIRED_KEYS = ["OPENAI_API_KEY"]
-DEFAULT_OUTPUT_DIR = pathlib.Path("/work/results")
+REQUIRED_KEYS = ["ANTHROPIC_API_KEY"]
+DEFAULT_OUTPUT_DIR = pathlib.Path("results")
 
 
 def missing_api_keys(env, required) -> list[str]:
@@ -44,7 +44,7 @@ def main(argv=None) -> int:
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
     log_status(
-        f"cli_start api=openai input_dir={args.input_dir} papers={len(papers)} "
+        f"cli_start api=anthropic input_dir={args.input_dir} papers={len(papers)} "
         f"soon_days={args.soon_days} out_dir={out_dir} max_ralph={max_ralph} "
         f"inner_max_turns={inner_max_turns} max_parallel={max_parallel}"
     )
