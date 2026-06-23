@@ -23,16 +23,19 @@ machine before starting the outer-agent process.
 ```bash
 cp .env.example .env            # put the key for the API you will use in it
 cp .paperflow.local.toml.example .paperflow.local.toml
-# put, copy, symlink, or mount .docx files under ./papers
+# put, copy, symlink, or mount .docx files under ./src/papers
 make run-openai
 ```
 The smallest developer command is `make run-openai` for OpenAI/Codex, or
 `make run-anthropic` for Claude. The provider must be explicit; there is no
-default. The Make shortcuts always use the host `./papers` folder. If your
+default. The Make shortcuts always use the host `./src/papers` folder. If your
 papers live elsewhere, put them there by copy, symlink, junction, or host mount.
-Docker Compose mounts that folder read-only and passes the matching container path
-`/app/papers` to the in-container harness through `docker-compose.yml`; there is
-no `INPUT_DIR` make variable to set. The harness loads
+Operational code and I/O live under `src/`; Docker Compose mounts the whole
+`./src` tree at `/app/src` so the container tree mirrors the host, and passes
+`/app/src/papers` as the input dir through `docker-compose.yml`. Orchestration and
+meta (`docker-compose.yml`, `Makefile`, `Dockerfile`) stay at the repo root and are
+never mounted, so the container — and the agent inside it — only ever sees `src/`.
+There is no `INPUT_DIR` make variable to set. The harness loads
 `academia-perks-openai` with `OPENAI_API_KEY` or `academia-perks-claude` with
 `ANTHROPIC_API_KEY`. `make down` runs `docker compose down -v` and `make prune`
 runs `docker system prune -f -a --volumes`.
@@ -42,7 +45,7 @@ harness builds the outer-agent prompt, loads the selected plugin, and starts the
 outer agent; the outer agent follows the `venue-matcher` skill and runs the
 bundled matcher program. The prompt includes the selected API key value; the
 loaded skill decides whether to set `OPENAI_API_KEY` or `ANTHROPIC_API_KEY`
-before running the matcher. Each harness run resets `./results/_execution.log`
+before running the matcher. Each harness run resets `./src/results/_execution.log`
 before the outer agent starts; that file mirrors the timestamped harness, tool,
 CLI, inner-agent, and batch status stream, plus the final outer-agent response,
 that also appears in container logs.
@@ -56,7 +59,7 @@ host, claude.ai itself) can load the same `academia-perks-*` plugin and must
 work correctly without ever having seen our harness code. So the harness only
 owns what's genuinely its own — `_execution.log`, the container-scoped record of
 the outer-agent/tool/CLI status stream — and never reaches into files owned by
-the plugin. `./results/_progress.log` is one such plugin-owned file: only the
+the plugin. `./src/results/_progress.log` is one such plugin-owned file: only the
 matcher (`runner.py`) resets and appends it, on every host, regardless of which
 outer agent is driving it. The fact that the matcher writes batch progress there
 and signals completion with `BATCH COMPLETE` lives once, in `SKILL.md`, so every
@@ -74,7 +77,7 @@ Tunables (dev-only, never visible to the agent): `MAX_PARALLEL` (default 1, or
 
 ### Codex (local or repo marketplace)
 This repo also contains a Codex/OpenAI plugin copy at
-`plugins/academia-perks-openai/`. The repo marketplace
+`src/plugins/academia-perks-openai/`. The repo marketplace
 `.agents/plugins/marketplace.json` points at that plugin-only folder, so Codex
 installs the plugin payload without the dev harness, tests, Docker files, or
 input examples.
@@ -91,7 +94,7 @@ local path. This makes the plugin available to users who add that marketplace;
 it does not publish the plugin to Codex's public OpenAI-curated directory.
 The Codex plugin copy sets the provided API key value as `OPENAI_API_KEY`, uses
 `openai-agents`, and defaults to `gpt-5.4-mini`; the Claude plugin copy lives at
-`plugins/academia-perks-claude/` and sets the provided API key value as
+`src/plugins/academia-perks-claude/` and sets the provided API key value as
 `ANTHROPIC_API_KEY`.
 
 ## How it works
