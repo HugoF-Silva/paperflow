@@ -9,7 +9,6 @@ import pathlib
 from dataclasses import dataclass
 
 from logging_utils import log_status, one_line
-import prompts
 
 
 @dataclass
@@ -73,7 +72,7 @@ async def run_pass(
     seed_assistant: str | None,
     cwd: pathlib.Path,
     max_turns: int,
-    model: str = prompts.DEFAULT_MODEL,
+    model: str,
     *,
     ralph_pass_no: int | None = None,
     ralph_max_passes: int | None = None,

@@ -1,6 +1,7 @@
 """Dev harness entry. Parses dev flags, sets the env-only knobs (MAX_RALPH,
 MAX_PARALLEL, INNER_MAX_TURNS) that the outer agent must NOT see, builds the
-outer agent's prompt with the selected API key value, and runs it."""
+outer agent's prompt with the selected API key and provider model values, and
+runs it."""
 from __future__ import annotations
 
 import argparse
@@ -59,6 +60,10 @@ def required_keys_for_api(api: str) -> list[str]:
     return list(outer_agent.api_config(api).required_keys)
 
 
+def required_env_for_api(api: str) -> list[str]:
+    return outer_agent.required_env_for_api(api)
+
+
 def _configured_output_dir(env=os.environ) -> pathlib.Path | None:
     raw = env.get("OUTPUT_DIR")
     if raw:
@@ -87,25 +92,27 @@ def main(argv=None) -> int:
     )
 
     required_keys = required_keys_for_api(ns.api)
-    missing = [k for k in required_keys if not os.environ.get(k)]
+    missing = [k for k in required_env_for_api(ns.api) if not os.environ.get(k)]
     if missing:
         outer_agent.log_status(
-            f"harness_cli_failed reason=missing_api_keys keys={','.join(missing)}"
+            f"harness_cli_failed reason=missing_env keys={','.join(missing)}"
         )
-        print(f"The following API keys are not set: {', '.join(missing)}",
+        print(f"The following environment variables are not set: {', '.join(missing)}",
               file=sys.stderr, flush=True)
         return 2
 
     apply_env(ns)
     api_keys = {k: os.environ[k] for k in required_keys}
+    model = outer_agent.resolve_model(ns.api)
     extras = list(ns.extra_skill_paths) + read_local_extras(ns.local_config)
 
     prompt = outer_agent.build_outer_prompt(
         str(ns.input_dir) if ns.input_dir is not None else None,
         ns.soon_days,
         api_keys,
+        model,
     )
-    rc = asyncio.run(outer_agent.run(prompt, ns.repo_root, extras, api=ns.api))
+    rc = asyncio.run(outer_agent.run(prompt, ns.repo_root, extras, model=model, api=ns.api))
     if rc:
         outer_agent.log_status(f"harness_cli_failed outer_agent_exit_code={rc}")
     else:

@@ -1,7 +1,7 @@
 """The dev outer agent: an Agent SDK agent that loads the selected plugin, uses
 the venue-matcher skill, and runs the bundled CLI via Bash. The harness reads
-provider API keys from its environment and gives the selected key value to the
-outer agent prompt; the loaded skill maps that value to its provider env var."""
+provider API keys and model names from its environment and gives selected values
+to the outer agent prompt; the loaded skill maps them to inner-agent env vars."""
 from __future__ import annotations
 
 from dataclasses import dataclass
@@ -17,23 +17,27 @@ import threading
 @dataclass(frozen=True)
 class ApiConfig:
     required_keys: tuple[str, ...]
-    plugin_path: pathlib.Path
+    model_env: str
     default_model: str
+    plugin_path: pathlib.Path
 
 
 API_CONFIGS = {
     "anthropic": ApiConfig(
         required_keys=("ANTHROPIC_API_KEY",),
-        plugin_path=pathlib.Path("plugins") / "academia-perks-claude",
+        model_env="ANTHROPIC_MODEL",
         default_model="claude-sonnet-4-6",
+        plugin_path=pathlib.Path("plugins") / "academia-perks-claude",
     ),
     "openai": ApiConfig(
         required_keys=("OPENAI_API_KEY",),
-        plugin_path=pathlib.Path("plugins") / "academia-perks-openai",
+        model_env="OPENAI_MODEL",
         default_model="gpt-5.4-mini",
+        plugin_path=pathlib.Path("plugins") / "academia-perks-openai",
     ),
 }
 API_CHOICES = tuple(API_CONFIGS)
+venue_matcher_model_env = "VENUE_MATCHER_MODEL"
 _TOOL_OUTPUT_LIMIT = 20_000
 _FILE_READ_LIMIT = 500_000
 _MAX_LOGGED_TOOL_LINES = 200
@@ -53,7 +57,12 @@ def _outer_execution_guidance(_api_key_names=None) -> str:
         "- If the venue-matcher skill requires an API key, use the literal API "
         "key value from the task prompt and set the environment variable "
         "required by the loaded venue-matcher skill before running the script.\n"
+        "- If the venue-matcher skill requires a model, use the literal model "
+        f"value from the task prompt and set `{venue_matcher_model_env}` "
+        "before running the script.\n"
         "- Do not pass the API key as a venue-matcher command flag, argument, "
+        "or file path.\n"
+        "- Do not pass the model as a venue-matcher command flag, argument, "
         "or file path.\n"
         "- Do not print the API key. Avoid echoing commands that contain it.\n"
         "- If a tool, command, authentication, dependency setup, or path step "
@@ -133,6 +142,15 @@ def api_config(api: str) -> ApiConfig:
         raise ValueError(f"unsupported api: {api}") from exc
 
 
+def required_env_for_api(api: str) -> list[str]:
+    return list(api_config(api).required_keys)
+
+
+def resolve_model(api: str, env=os.environ) -> str:
+    config = api_config(api)
+    return env.get(config.model_env) or config.default_model
+
+
 def resolve_plugin_root(repo_root: pathlib.Path, api: str = "anthropic") -> pathlib.Path:
     return pathlib.Path(repo_root) / api_config(api).plugin_path
 
@@ -141,7 +159,12 @@ def resolve_skill_path(repo_root: pathlib.Path, api: str = "anthropic") -> pathl
     return resolve_plugin_root(repo_root, api) / "skills" / "venue-matcher" / "SKILL.md"
 
 
-def build_outer_prompt(input_dir: str | None, soon_days: int, api_keys: dict[str, str]) -> str:
+def build_outer_prompt(
+    input_dir: str | None,
+    soon_days: int,
+    api_keys: dict[str, str],
+    model: str,
+) -> str:
     key_values = _format_api_key_value_lines(api_keys)
     input_section = (
         f"Input directory (papers are here): {input_dir}\n"
@@ -159,10 +182,14 @@ def build_outer_prompt(input_dir: str | None, soon_days: int, api_keys: dict[str
         f"soon-days to pass to the program: {soon_days}\n\n"
         "API configuration for this run:\n"
         f"{key_values}\n"
+        f"- Model env var: {venue_matcher_model_env}\n"
+        f"- Model value: {model}\n"
         "If the venue-matcher skill requires an API key, use this literal API "
         "key value and set the environment variable required by the loaded "
         "venue-matcher skill. Do not pass the API key as a venue-matcher "
-        "command flag. Do not print it.\n\n"
+        "command flag. Do not print it. If the venue-matcher skill requires a "
+        f"model, set {venue_matcher_model_env} to the model value above; it is "
+        "the same model selected for you, the outer agent reading the skill.\n\n"
         f"{_outer_execution_guidance(api_keys)}\n\n"
         "Then follow the skill: install deps, run the bundled CLI in the "
         "foreground with --input-dir and --soon-days and a long timeout so its "
@@ -417,7 +444,7 @@ async def run(prompt: str, repo_root: pathlib.Path, extra_skill_paths=None,
               api: str = "anthropic") -> int:
     repo_root = pathlib.Path(repo_root)
     config = api_config(api)
-    selected_model = model or config.default_model
+    selected_model = model or resolve_model(api)
     log_status(
         f"harness_start api={api} model={selected_model} "
         f"repo_root={repo_root} plugin={repo_root / config.plugin_path}"

@@ -7,7 +7,6 @@ from __future__ import annotations
 import pathlib
 
 PROMISE_TAG = "<promise>VENUE-MATCH-COMPLETE</promise>"
-DEFAULT_MODEL = "claude-sonnet-4-6"
 
 _GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md", "brazilian-ecosystems.md")
 

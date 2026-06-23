@@ -105,10 +105,10 @@ def run_for_paper(
     out_dir: pathlib.Path,
     max_ralph: int,
     inner_max_turns: int,
+    model: str,
     *,
     run_pass=inner_agent.run_pass,
     compact_recap=_compact_recap,
-    model: str = prompts.DEFAULT_MODEL,
 ) -> RalphResult:
     out_dir.mkdir(parents=True, exist_ok=True)
     system_prompt = prompts.build_system_prompt()

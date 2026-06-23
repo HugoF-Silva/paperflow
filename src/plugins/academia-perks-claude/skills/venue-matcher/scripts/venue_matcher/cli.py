@@ -11,11 +11,12 @@ import sys
 from logging_utils import log_status
 import runner
 
-REQUIRED_KEYS = ["ANTHROPIC_API_KEY"]
+MODEL_ENV = "VENUE_MATCHER_MODEL"
+REQUIRED_ENV = ["ANTHROPIC_API_KEY", MODEL_ENV]
 DEFAULT_OUTPUT_DIR = pathlib.Path("results")
 
 
-def missing_api_keys(env, required) -> list[str]:
+def missing_env_vars(env, required) -> list[str]:
     return [k for k in required if not env.get(k)]
 
 
@@ -27,9 +28,9 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def main(argv=None) -> int:
-    missing = missing_api_keys(os.environ, REQUIRED_KEYS)
+    missing = missing_env_vars(os.environ, REQUIRED_ENV)
     if missing:
-        print(f"The following API keys are not set: {', '.join(missing)}",
+        print(f"The following environment variables are not set: {', '.join(missing)}",
               file=sys.stderr, flush=True)
         return 2
 
@@ -43,14 +44,15 @@ def main(argv=None) -> int:
     max_ralph = int(os.environ.get("MAX_RALPH", "8"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
+    model = os.environ[MODEL_ENV]
     log_status(
         f"cli_start api=anthropic input_dir={args.input_dir} papers={len(papers)} "
         f"soon_days={args.soon_days} out_dir={out_dir} max_ralph={max_ralph} "
-        f"inner_max_turns={inner_max_turns} max_parallel={max_parallel}"
+        f"inner_max_turns={inner_max_turns} max_parallel={max_parallel} model={model}"
     )
 
     summary = runner.run_batch(papers, out_dir, args.soon_days, max_ralph,
-                               inner_max_turns, max_parallel)
+                               inner_max_turns, max_parallel, model)
     log_status(
         f"cli_finish succeeded={summary['succeeded']} total={summary['total']} "
         f"failed={summary['failed']} out_dir={out_dir}"

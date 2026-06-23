@@ -3,9 +3,9 @@
 Finds the publication venues an academic paper belongs to, ranked by fit, split
 into "open now" and "opening soon".
 
-**Prerequisite:** an API key value must be provided by the user or outer-agent
-prompt. The skill sets that value as `ANTHROPIC_API_KEY` before running the
-matcher.
+**Prerequisite:** an API key value and reader-matching model value must be
+provided by the user or outer-agent prompt. The skill sets those values as
+`ANTHROPIC_API_KEY` and `VENUE_MATCHER_MODEL` before running the matcher.
 
 This skill guides an agent to run the bundled program at
 `scripts/venue_matcher/cli.py`. It is invoked by asking ("find a venue for my

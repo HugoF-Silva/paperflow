@@ -81,13 +81,13 @@ def _result_status(result) -> tuple[bool, str]:
     return bool(result), "failed"
 
 
-def _process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns):
+def _process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns, model):
     log_status(f"paper_start paper={paper.name}")
     try:
         text = extraction.extract_text(paper)
         log_status(f"paper_extracted paper={paper.name} chars={len(text)}")
         res = ralph.run_for_paper(text, soon_days, out_dir / paper.stem,
-                                  max_ralph, inner_max_turns)
+                                  max_ralph, inner_max_turns, model=model)
     except Exception as exc:
         log_status(f"paper_error paper={paper.name} error={type(exc).__name__}")
         raise
@@ -99,7 +99,7 @@ def _process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns):
 
 
 def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
-              max_parallel, *, process_one=_process_one) -> dict:
+              max_parallel, model, *, process_one=_process_one) -> dict:
     out_dir = pathlib.Path(out_dir)
     out_dir.mkdir(parents=True, exist_ok=True)
     progress = out_dir / "_progress.log"
@@ -123,7 +123,8 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
             reset_paper_output(out_dir, paper)
             try:
                 ok, reason = _result_status(
-                    process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns)
+                    process_one(paper, out_dir, soon_days, max_ralph,
+                                inner_max_turns, model)
                 )
             except Exception as exc:
                 ok = False
@@ -144,7 +145,7 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
             for paper in papers:
                 reset_paper_output(out_dir, paper)
                 futs[ex.submit(process_one, paper, out_dir, soon_days, max_ralph,
-                               inner_max_turns)] = paper
+                               inner_max_turns, model)] = paper
             from concurrent.futures import as_completed
             for fut in as_completed(futs):
                 paper = futs[fut]

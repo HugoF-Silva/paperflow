@@ -32,13 +32,15 @@ what is happening - excellent service.
   containing those `.docx` files. The matcher ignores other file types.
 
 ## Procedure
-1. **Preflight before any install or run.** Verify all three items:
+1. **Preflight before any install or run.** Verify all four items:
    - Paper: search directories the agent can access and confirm at least one
      `.docx` paper exists.
    - Opening tolerance: confirm how many days the user tolerates until a venue
      opens; this is the `--soon-days` value.
    - API key: confirm a provided API key value exists in the task prompt or
      from the user. The original key name does not matter.
+   - Model: choose a model through `VENUE_MATCHER_MODEL`; it must be the same
+     provider/runtime family as you, the agent reading this skill.
 
    If any item is missing, ask exactly one question for each missing item with
    Codex's user-question tool, `request_user_input`: one user-question tool call per missing item. Do not use Claude's `AskUserQuestion` tool name in this
@@ -46,11 +48,15 @@ what is happening - excellent service.
    the missing item instead of running the script.
 2. **Find the input directory.** If you were given one, use it. Otherwise search
    the sandbox for the uploaded `.docx` paper(s) and use the directory containing those `.docx` files. Do not invent a default path.
-3. **Set the API environment variable.** Set `OPENAI_API_KEY` to the provided
-   API key value before running the script. Do not pass the API key value as a venue-matcher command flag, and do not print it. For Bash:
+3. **Set the API and model environment variables.** Set `OPENAI_API_KEY` to the
+   provided API key value before running the script.
+   Set `VENUE_MATCHER_MODEL` to the model identity that matches you, the agent reading this skill. The goal is for the inner venue-matching agent to run as the same kind of agent as the skill reader, not for this skill to prescribe a fixed model.
+   Do not pass the API key or model value as a venue-matcher command flag, and
+   do not print them. For Bash:
    `export OPENAI_API_KEY='<provided-api-key-value>'`
+   `export VENUE_MATCHER_MODEL='<reader-model>'`
    If your shell tool does not preserve exported variables across calls, include
-   the export in the same shell call that starts the matcher.
+   the exports in the same shell call that starts the matcher.
 4. **Install deps once** (idempotent; safe to repeat). Use the directory
    containing this `SKILL.md` as `<skill-dir>`:
    `pip install -q -r <skill-dir>/scripts/requirements.txt`
