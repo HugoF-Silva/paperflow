@@ -223,7 +223,8 @@ async def run_pass(
     ralph_pass_no: int | None = None,
     ralph_max_passes: int | None = None,
 ) -> PassResult:
-    from agents import Agent, Runner
+    from agents import Agent, ModelSettings, Runner
+    from openai.types.shared import Reasoning
 
     context = _pass_context(ralph_pass_no, ralph_max_passes)
     log_status(
@@ -234,6 +235,7 @@ async def run_pass(
         name="venue-matcher",
         instructions=system_prompt,
         model=model,
+        model_settings=ModelSettings(reasoning=Reasoning(effort="high")),
         tools=build_tools(cwd),
     )
 
