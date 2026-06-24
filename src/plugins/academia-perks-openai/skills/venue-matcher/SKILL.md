@@ -61,13 +61,20 @@ what is happening - excellent service.
 4. **Install deps once** (idempotent; safe to repeat). Use the directory
    containing this `SKILL.md` as `<skill-dir>`:
    `pip install -q -r <skill-dir>/scripts/requirements.txt`
-5. **Run it in the background and poll.** You may set only `--input-dir` and
+5. **Run it once and wait patiently.** You may set only `--input-dir` and
    `--soon-days`:
-   `python <skill-dir>/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N> > /tmp/vm.out 2>&1 &`
-   The program writes to `results` (its configured output directory) and
-   prints that directory on its final stdout line, so you can confirm it there.
-   Then poll `results/_progress.log` until it shows `BATCH COMPLETE`,
-   reporting the running `done/total`. Do not give up early.
+   `python <skill-dir>/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N>`
+   Use one long-running shell/tool call with a timeout that can cover the whole
+   matcher run. Do not background it, redirect it to `/tmp/vm.out`, or tail
+   logs. Do not repeatedly read `_execution.log`, `_progress.log`,
+   `/tmp/vm.out`, or result files while it is running; every read spends tokens.
+   The program writes to `results` (its configured output directory) and prints
+   that directory on its final stdout line, so confirm outputs after the command
+   returns.
+   If your host forces background execution, be patient: wait at least 5 minutes
+   before the first check, then at least 5 minutes between checks. Check only
+   `results/_progress.log` for `BATCH COMPLETE` or final result file existence;
+   do not read large/tailing logs unless the process exited or timed out.
 6. **If it ends with no result** (e.g. the sandbox killed it at ~5 min), say so
    plainly and suggest cloning the repo to run locally as a developer (more work,
    but reliable for many papers).
