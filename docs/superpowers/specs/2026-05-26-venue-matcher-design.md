@@ -114,21 +114,22 @@ Only `/venue-matcher` in the user prompt triggers it.
    The skill body **explains what each constraint means** (see §5.4) so the
    agent treats them as real web-search constraints, not opaque flags.
 3. **Stage A — Read the paper.** Extract title, abstract, contribution,
-   methods, real-world application, language. Write a one-paragraph "what this
-   paper IS / what it ISN'T" statement.
+   methods, and real-world application. Write a one-paragraph "what this paper
+   IS / what it ISN'T" statement.
 4. **Stage B — Discover candidate venues.** Spawn 2–4 parallel `Agent`
    subagents, each with a *narrow* angle (niche keyword + country, broader
-   keyword + country, language-targeted, conference/journal/magazine/track).
+   keyword + country, mother-language country search terms,
+   conference/journal/magazine/track).
    Subagents return URL lists, never verdicts.
 5. **Stage C — Read every candidate.** For each URL, `WebFetch` the CFP/about
    page. Extract: accepted topics, audience, constraints, registration
-   deadline, language(s), country, indexing. Compare against the paper's
+   deadline, country, indexing. Compare against the paper's
    IS/ISN'T statement. Decide real candidate, weak candidate, or ruled out.
    Write rationale. **Search snippets are never sufficient.**
 6. **Stage D — Bucket and rank.** Split survivors into `open_now` and
    `opening_soon` (registration deadline within `now + soon_days`). Rank by
-   fit DESC. Tie-breaks: language match → country match → niche specificity →
-   "vibes" (allowed, but must include a one-line reason).
+   fit DESC. Tie-breaks: country match → niche specificity → "vibes" (allowed,
+   but must include a one-line reason). Never rank or filter by language.
 7. **Stage E — Recognize the fit.** Keep weighing "is this where the paper
    belongs?" Stop on recognition, however early or late. If nothing strongly
    clicks after honest, thorough searching, name the closest survivors and
@@ -160,8 +161,9 @@ A short, explicit explanation the agent reads when invoked:
 > **`countries`** — Comma-separated ISO-3166 alpha-2 country codes (default
 > `BR`). Strongly prefer venues with primary affiliation in these countries.
 > Venues outside the list are not banned, but they need much stronger
-> thematic fit to outrank a same-country venue, and they only stay if they
-> accept the paper's language (PT-BR or EN).
+> thematic fit to outrank a same-country venue. Use each target country's
+> mother language for discovery searches, but do not use language as an
+> eligibility rule or tie-breaker.
 >
 > **`output_path`** — Absolute path to the directory where
 > `ranking.json` and `ranking.md` must be written. Do not write anywhere else.
@@ -372,10 +374,10 @@ Search constraints:
 - Open now OR opening within 31 calendar days from today. Reject anything
   whose registration opens later than that.
 - Country preference: BR (primary). Non-BR venues are allowed only when their
-  thematic fit is markedly stronger than any BR alternative AND they accept
-  the paper's language.
-- The paper's language(s): detect from the file. Brazilian Portuguese and/or
-  English are expected.
+  thematic fit is markedly stronger than any BR alternative.
+- Search wording: use Brazilian Portuguese query terms for Brazil, because it is
+  the country's mother language. Do not infer countries from the paper's
+  language, and do not filter or rank venues by accepted language.
 
 Write your final ranking to:
 - /work/results/<basename>/ranking.json
@@ -474,13 +476,15 @@ sub-directories are created.**
 
 ### 11.2 `ranking.json` shape
 
+Keep the JSON keys in English. Write human-readable string values in Brazilian
+Portuguese; keep official venue names and URLs as published.
+
 ```json
 {
   "paper": {
     "path": "papers/Foo.docx",
-    "language": "pt-BR",
-    "is_statement": "What the paper IS — its contribution, methods, applied domain.",
-    "isnt_statement": "What the paper IS NOT — explicit out-of-scope notes."
+    "is_statement": "O que o artigo É — sua contribuição, métodos e domínio aplicado.",
+    "isnt_statement": "O que o artigo NÃO É — notas explícitas fora de escopo."
   },
   "params": {
     "soon_days": 31,
@@ -494,10 +498,9 @@ sub-directories are created.**
       "kind": "conference|journal|magazine|track|workshop",
       "url": "https://…",
       "country": "BR",
-      "languages": ["pt-BR", "en"],
       "deadline": "2026-06-15",
-      "topics_matched": ["IS in industry", "applied AI"],
-      "rationale": "Specific paragraph tying the paper's contribution to this venue's stated topics. No generic platitudes."
+      "topics_matched": ["SI na indústria", "IA aplicada"],
+      "rationale": "Parágrafo específico ligando a contribuição do artigo aos tópicos declarados do venue. Sem generalidades."
     }
   ],
   "opening_soon": [ /* same shape; deadline within now+soon_days */ ],

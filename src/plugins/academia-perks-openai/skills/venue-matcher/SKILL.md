@@ -25,8 +25,9 @@ what is happening - excellent service.
 - **Codex 5-minute reality:** one paper's full loop is built to finish under
   ~5 minutes. More papers run sequentially and may exceed the sandbox cap - use
   one session per paper there.
-- **Targeting:** country-only (from the paper; Brazil if unstated). Language is
-  never a filter.
+- **Targeting:** country-only (from the paper; Brazil if unstated). The inner
+  agent phrases web searches in the target country's mother language; language
+  is never a venue filter or ranking factor.
 - **Input files:** Only `.docx` files are supported. If uploads include other
   formats, tell the user this skill only accepts `.docx`, then use the directory
   containing those `.docx` files. The matcher ignores other file types.
@@ -71,4 +72,8 @@ what is happening - excellent service.
    plainly and suggest cloning the repo to run locally as a developer (more work,
    but reliable for many papers).
 7. **Always report outcomes:** the created files `results/<stem>/ranking.json`
-   and `results/<stem>/ranking.md`, plus a human-friendly summary of the ranking.
+   and `results/<stem>/ranking.md`, then the full `ranking.md` content. Report
+   that full ranking.md content using the user's preferred language; if the user
+   did not explicitly state one, use the language the user is already using with
+   you or asked you to use. If your environment lets you attach or link local
+   files for download, also provide the `ranking.md` file for download.

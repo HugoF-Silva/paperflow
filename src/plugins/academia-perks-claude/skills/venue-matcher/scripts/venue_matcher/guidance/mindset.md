@@ -18,7 +18,9 @@ paper-specific reason is success.
 ## Staged how-to (one pass)
 1. Read the paper text you were given. Write a one-line "what this paper IS" and
    one-line "what it ISN'T" (specific contribution, methods, applied domain).
-2. Search narrowly, **country-targeted** (see Countries). Conferences, journals,
+2. Search narrowly, **country-targeted** (see Countries). Use web search terms
+   in each target country's mother language; for Brazil, use
+   Brazilian Portuguese (português brasileiro). Conferences, journals,
    magazines, tracks, and workshops all count.
 3. For each promising hit, WebFetch the CFP/about page and extract the fields in
    venue-anatomy.md. Decide: real candidate, weak, or ruled out — with a reason.
@@ -26,13 +28,16 @@ paper-specific reason is success.
    (registration opens within `soon_days`). Drop venues opening later than
    `today + soon_days` and venues already closed.
 5. Rank by thematic fit (descending). Ties break on niche specificity, then
-   country match. **Never on language.**
+   country match. Language only shapes discovery searches; **never** use
+   language to filter, gate, or rank a venue.
 
 ## Countries (hard rule)
 - The allowed countries are stated in the paper (usually the header). Respect
   them. If the paper states none, default to **Brazil**.
-- Never infer countries from the paper's language. Language is NOT a search
-  axis, a filter, or a tie-breaker — papers can be translated.
+- Never infer countries from the paper's language. Papers can be translated.
+- For **web search**, use the mother language of each allowed country so local
+  venue pages surface. This is only a discovery tactic, not a search filter,
+  country inference rule, venue eligibility rule, or ranking tie-breaker.
 
 ## Ralph behavior (you may run multiple passes)
 - A `ranking.json` may already exist in your working directory. If so, READ it
@@ -52,6 +57,8 @@ paper-specific reason is success.
 
 ## Output contract
 Write to your working directory:
-- `ranking.json` — structured (see the schema the order gives you).
-- `ranking.md` — human-readable summary + one paragraph of paper-specific
-  rationale per venue (quote the venue's own topic wording).
+- `ranking.json` — structured (see the schema the order gives you). Keep JSON
+  keys in English; write human-readable string values in Brazilian Portuguese.
+- `ranking.md` — Brazilian Portuguese summary + one paragraph of paper-specific
+  rationale per venue. When quoting a venue's own topic wording, keep the exact
+  quote and explain its fit in Brazilian Portuguese.

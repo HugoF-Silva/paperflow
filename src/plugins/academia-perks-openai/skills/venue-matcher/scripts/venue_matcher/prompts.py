@@ -4,6 +4,7 @@ delivered to the inner agent (which can't read skill files) via the system
 prompt."""
 from __future__ import annotations
 
+from datetime import date
 import pathlib
 
 PROMISE_TAG = "<promise>VENUE-MATCH-COMPLETE</promise>"
@@ -36,16 +37,23 @@ def build_system_prompt(guidance_dir: pathlib.Path | None = None) -> str:
 
 def build_user_order(paper_text: str, soon_days: int) -> str:
     return (
-        "Rank the publication venues this paper truly belongs to, and write "
-        "ranking.json and ranking.md in your working directory.\n\n"
-        f"soon_days: {soon_days}\n\n"
-        "ranking.json schema: {\"paper\": {\"path\": str, \"is_statement\": str, "
+        "Classifique os veículos de publicação aos quais este artigo realmente "
+        "pertence e escreva ranking.json e ranking.md no seu diretório de "
+        "trabalho, em português brasileiro.\n\n"
+        "Mantenha as chaves de ranking.json em inglês exatamente como no "
+        "esquema. Escreva os valores textuais de ranking.json e todo o "
+        "ranking.md em português brasileiro. Não traduza nomes oficiais de "
+        "venues, URLs nem o texto do artigo.\n\n"
+        f"Parâmetro soon_days: {soon_days}\n"
+        f"Data de hoje: {date.today().isoformat()}\n\n"
+        "Esquema de ranking.json (chaves em inglês): "
+        "{\"paper\": {\"path\": str, \"is_statement\": str, "
         "\"isnt_statement\": str}, \"params\": {\"soon_days\": int, "
         "\"countries\": [str], \"as_of\": str}, \"open_now\": [{\"rank\": int, "
         "\"name\": str, \"kind\": str, \"url\": str, \"country\": str, "
         "\"deadline\": str, \"topics_matched\": [str], \"rationale\": str}], "
         "\"opening_soon\": [...same...], \"closest_misses\": [...], "
         "\"agent_notes\": str}\n\n"
-        "PAPER:\n"
+        "Texto do artigo (preserve exatamente como está; não traduza):\n"
         f"{paper_text}\n"
     )

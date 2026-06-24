@@ -119,4 +119,11 @@ compacted recap from each pass into the next as its own first "memory". The
 Claude copy uses Claude tool names (`Read`, `Write`, `WebSearch`, `WebFetch`);
 the Codex copy uses OpenAI Agents SDK web search plus local read/write/fetch
 function tools. Targeting is country-only (from the paper; Brazil if unstated).
+The inner agent uses the target country's mother language for web-search terms
+so local venue pages surface, but language is not a venue filter or ranking
+factor. The inner artifacts are written in Brazilian Portuguese (`ranking.json`
+keeps English keys); the outer agent reports the full ranking.md content in the
+user's preferred language, defaulting to the language the user is already using,
+and provides the `ranking.md` file for download when its environment supports
+file attachments or links.
 See `docs/superpowers/specs/2026-06-20-venue-matcher-design.md`.
