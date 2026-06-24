@@ -12,9 +12,10 @@ PROMISE_TAG = "<promise>VENUE-MATCH-COMPLETE</promise>"
 _GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md", "brazilian-ecosystems.md")
 
 SUMMARY_INSTRUCTION = (
-    "In <=8 terse bullets, recap what you just did this pass: what you searched, "
-    "what you found, what you ruled out and why, and what is still open. "
-    "No prose, no preamble — just the bullets."
+    "Em <=8 tópicos curtos, em português brasileiro, recapitule o que você "
+    "acabou de fazer nesta passagem: o que você buscou, o que encontrou, o que "
+    "descartou e por quê, e o que ainda está em aberto. Sem prosa, sem "
+    "preâmbulo — apenas os tópicos."
 )
 
 

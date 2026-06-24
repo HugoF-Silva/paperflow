@@ -235,7 +235,7 @@ async def run_pass(
         name="venue-matcher",
         instructions=system_prompt,
         model=model,
-        model_settings=ModelSettings(reasoning=Reasoning(effort="high")),
+        model_settings=ModelSettings(reasoning=Reasoning(effort="medium"), verbosity="low"),
         tools=build_tools(cwd),
     )
 

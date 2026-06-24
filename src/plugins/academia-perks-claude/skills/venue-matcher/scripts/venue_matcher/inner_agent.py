@@ -93,7 +93,7 @@ async def run_pass(
         system_prompt=system_prompt,
         max_turns=max_turns,
         model=model,
-        effort="high",
+        effort="medium",
     )
 
     messages = build_input_messages(seed_assistant, user_order)

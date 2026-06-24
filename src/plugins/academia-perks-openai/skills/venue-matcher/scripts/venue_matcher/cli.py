@@ -41,7 +41,7 @@ def main(argv=None) -> int:
         return 1
 
     out_dir = pathlib.Path(os.environ.get("OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
-    max_ralph = int(os.environ.get("MAX_RALPH", "8"))
+    max_ralph = int(os.environ.get("MAX_RALPH", "4"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
     model = os.environ[MODEL_ENV]
