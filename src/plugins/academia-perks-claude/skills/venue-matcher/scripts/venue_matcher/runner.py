@@ -1,5 +1,5 @@
 """Dispatch one process per paper (sequential by default), with resource-aware
-sizing when MAX_PARALLEL=auto, and a progress log the outer agent polls."""
+sizing when MAX_PARALLEL=auto, and a progress log."""
 from __future__ import annotations
 
 import os

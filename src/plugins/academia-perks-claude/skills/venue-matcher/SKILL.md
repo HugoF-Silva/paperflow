@@ -19,9 +19,12 @@ what is happening — excellent service.
 - **claude.ai 5-minute reality:** one paper's full loop is built to finish under
   ~5 minutes. More papers run sequentially and may exceed the sandbox cap — use
   one session per paper there.
-- **Targeting:** country-only (from the paper; Brazil if unstated). The inner
-  agent phrases web searches in the target country's mother language; language
-  is never a venue filter or ranking factor.
+- **Targeting:** use exactly one geographic audience scope from the paper: its
+  sole stated scope, or only the first when several are listed; if none is
+  stated, use **International**. Only venues whose primary geographic audience
+  scope fits that one target are rankable. The inner agent may phrase discovery
+  searches in the selected scope's expected language, but language never expands
+  or determines the target scope.
 - **Input files:** Only `.docx` files are supported. If uploads include other
   formats, tell the user this skill only accepts `.docx`, then use the directory
   containing those `.docx` files. The matcher ignores other file types.
@@ -57,21 +60,21 @@ what is happening — excellent service.
 5. **Run it once and wait patiently.** You may set only `--input-dir` and
    `--soon-days`:
    `python ${CLAUDE_PLUGIN_ROOT}/skills/venue-matcher/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N>`
-   Use one long-running shell/tool call with a timeout that can cover the whole
-   matcher run. Do not background it, redirect it to `/tmp/vm.out`, or tail
-   logs. Do not repeatedly read `_execution.log`, `_progress.log`,
+   Use one foreground shell/tool call. Do not set a custom short timeout; if
+   the tool requires a timeout, use the highest value available. Do not
+   background it, redirect it to `/tmp/vm.out`, or tail logs. Do not repeatedly
+   read `_execution.log`, `_progress.log`,
    `/tmp/vm.out`, or result files while it is running; every read spends tokens.
    The program writes to `results` (its configured output directory) and prints
    that directory on its final stdout line, so confirm outputs after the command
    returns.
-   If your host forces background execution, be patient: wait at least 5 minutes
-   before the first check, then at least 5 minutes between checks. Check only
-   `results/_progress.log` for `BATCH COMPLETE` or final result file existence;
-   do not read large/tailing logs unless the process exited or timed out.
+   If your host forces background execution, be patient: Check only `results/_progress.log`
+   for `BATCH COMPLETE` or final result file existence; do not read large/tailing
+   logs unless the process exited or timed out.
 6. **If it ends with no result** (e.g. the sandbox killed it at ~5 min), say so
    plainly and suggest cloning the repo to run locally as a developer (more work,
    but reliable for many papers).
-7. **Always report outcomes:** the created files `results/<stem>/ranking.json`
+6. **Always report outcomes:** the created files `results/<stem>/ranking.json`
    and `results/<stem>/ranking.md`, then the full `ranking.md` content. Report
    that full ranking.md content using the user's preferred language; if the user
    did not explicitly state one, use the language the user is already using with

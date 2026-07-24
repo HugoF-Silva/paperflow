@@ -59,6 +59,12 @@ def main(argv=None) -> int:
     )
     print(f"Done: {summary['succeeded']}/{summary['total']} succeeded "
           f"({summary['failed']} failed). Results in {out_dir}", flush=True)
+    stems = summary["agent_result_stems"]
+    print(
+        f"Completed per-paper matcher-agent results: {len(stems)} "
+        f"[{', '.join(stems)}]",
+        flush=True,
+    )
     return 0 if summary["failed"] == 0 else 1
 
 

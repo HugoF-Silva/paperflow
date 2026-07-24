@@ -8,7 +8,7 @@ from __future__ import annotations
 import pathlib
 from dataclasses import dataclass
 
-from logging_utils import log_status, one_line
+from logging_utils import log_status
 
 
 @dataclass
@@ -138,8 +138,8 @@ async def run_pass(
                 assistant_text = "\n".join(chunks)
                 log_status(
                     f"inner_agent_turn_finish {context} turn={turn_no} "
-                    f"event={message_type} output_chars={len(assistant_text)} "
-                    f'output_preview="{one_line(assistant_text)}"'
+                    f"event={message_type} output_chars={len(assistant_text)}",
+                    assistant_text or None,
                 )
             elif isinstance(message, ResultMessage):
                 last_text = message.result or last_text
@@ -156,7 +156,6 @@ async def run_pass(
                 )
     log_status(
         f"inner_agent_pass_finish {context} turns={turn_no} events={event_no} "
-        f"output_chars={len(last_text or '')} "
-        f'output_preview="{one_line(last_text)}"'
+        f"output_chars={len(last_text or '')}"
     )
     return PassResult(session_id=session_id, last_text=last_text)

@@ -9,10 +9,19 @@ import pathlib
 
 PROMISE_TAG = "<promise>VENUE-MATCH-COMPLETE</promise>"
 
-_GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md", "brazilian-ecosystems.md")
+_GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md")
+
+CONCISION_POLICY = (
+    "Reason deeply; write briefly. Search iterations are working steps, not "
+    "deliverables: do not write "
+    "long prose while investigating, and do not preserve every thought in chat. "
+    "Use terse notes to decide fit, then Rerank after each verified candidate. "
+    "Long prose belongs only in ranking.md; ranking.json should stay structured "
+    "and concise.\n"
+)
 
 SUMMARY_INSTRUCTION = (
-    "Em <=8 tópicos curtos, em português brasileiro, recapitule o que você "
+    "Em tópicos sucintos, em português brasileiro, recapitule o que você "
     "acabou de fazer nesta passagem: o que você buscou, o que encontrou, o que "
     "descartou e por quê, e o que ainda está em aberto. Sem prosa, sem "
     "preâmbulo — apenas os tópicos."
@@ -32,6 +41,7 @@ def build_system_prompt(guidance_dir: pathlib.Path | None = None) -> str:
     body = "\n\n---\n\n".join(parts)
     return (
         "You are a venue-matching agent. Follow this guidance exactly.\n\n"
+        f"{CONCISION_POLICY}\n"
         f"{body}\n"
     )
 
@@ -45,13 +55,17 @@ def build_user_order(paper_text: str, soon_days: int) -> str:
         "esquema. Escreva os valores textuais de ranking.json e todo o "
         "ranking.md em português brasileiro. Não traduza nomes oficiais de "
         "venues, URLs nem o texto do artigo.\n\n"
+        "Use exatamente um escopo geográfico de audiência alvo: use o escopo "
+        "declarado se houver um; se houver uma lista ou mais de um, use apenas o "
+        "primeiro declarado; se não houver, use International. Nunca amplie a "
+        "busca para um escopo declarado depois do primeiro.\n\n"
         f"Parâmetro soon_days: {soon_days}\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
         "Esquema de ranking.json (chaves em inglês): "
         "{\"paper\": {\"path\": str, \"is_statement\": str, "
         "\"isnt_statement\": str}, \"params\": {\"soon_days\": int, "
-        "\"countries\": [str], \"as_of\": str}, \"open_now\": [{\"rank\": int, "
-        "\"name\": str, \"kind\": str, \"url\": str, \"country\": str, "
+        "\"audience_scope\": str, \"as_of\": str}, \"open_now\": [{\"rank\": int, "
+        "\"name\": str, \"kind\": str, \"url\": str, \"audience_scope\": str, "
         "\"deadline\": str, \"topics_matched\": [str], \"rationale\": str}], "
         "\"opening_soon\": [...same...], \"closest_misses\": [...], "
         "\"agent_notes\": str}\n\n"

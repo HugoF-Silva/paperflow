@@ -15,6 +15,7 @@ from harness import outer_agent
 
 DEFAULT_OUTPUT_DIR = pathlib.Path("/app/src/results")
 EXECUTION_LOG_NAME = "_execution.log"
+TODO_CHOICES = outer_agent.TODO_CHOICES
 
 
 def parse_args(argv=None) -> argparse.Namespace:
@@ -26,6 +27,10 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--inner-max-turns", type=int, default=int(os.environ.get("INNER_MAX_TURNS", "50")))
     p.add_argument("--extra-skill-paths", action="append", default=[], type=pathlib.Path)
     p.add_argument("--api", choices=outer_agent.API_CHOICES, required=True)
+    p.add_argument("--todo", choices=TODO_CHOICES,
+                   default="matcher-and-converter")
+    p.add_argument("--chosen-venue")
+    p.add_argument("--template-path", type=pathlib.Path)
     p.add_argument("--local-config", type=pathlib.Path,
                    default=pathlib.Path("/app/ops/.paperflow.local.toml"))
     p.add_argument("--repo-root", type=pathlib.Path, default=pathlib.Path("/app/src"))
@@ -84,6 +89,17 @@ def initialize_harness_logs(ns: argparse.Namespace, env=os.environ) -> pathlib.P
 
 def main(argv=None) -> int:
     ns = parse_args(argv)
+    if ns.todo == "converter":
+        if ns.api != "openai":
+            print("Converter mode is available only with OpenAI.", file=sys.stderr, flush=True)
+            return 2
+        if (ns.chosen_venue is None) == (ns.template_path is None):
+            print(
+                "Converter mode requires exactly one of --chosen-venue or --template-path.",
+                file=sys.stderr,
+                flush=True,
+            )
+            return 2
     load_dotenv(ns.local_config.with_name(".env"))
     execution_log = initialize_harness_logs(ns)
     outer_agent.log_status(
@@ -106,14 +122,34 @@ def main(argv=None) -> int:
     model = outer_agent.resolve_model(ns.api)
     extras = list(ns.extra_skill_paths) + read_local_extras(ns.local_config)
 
-    prompt = outer_agent.build_outer_prompt(
-        str(ns.input_dir) if ns.input_dir is not None else None,
-        ns.soon_days,
-        api_keys,
-        model,
-        ns.repo_root,
+    input_dir = str(ns.input_dir) if ns.input_dir is not None else None
+    if ns.todo == "converter":
+        prompt = outer_agent.build_converter_prompt(
+            input_dir,
+            api_keys,
+            model,
+            ns.repo_root,
+            chosen_venue=ns.chosen_venue,
+            template_path=ns.template_path,
+        )
+    else:
+        prompt = outer_agent.build_outer_prompt(
+            input_dir,
+            ns.soon_days,
+            api_keys,
+            model,
+            ns.repo_root,
+        )
+    rc = asyncio.run(
+        outer_agent.run(
+            prompt,
+            ns.repo_root,
+            extras,
+            model=model,
+            api=ns.api,
+            todo=ns.todo,
+        )
     )
-    rc = asyncio.run(outer_agent.run(prompt, ns.repo_root, extras, model=model, api=ns.api))
     if rc:
         outer_agent.log_status(f"harness_cli_failed outer_agent_exit_code={rc}")
     else:

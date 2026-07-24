@@ -1,5 +1,5 @@
 """Dispatch one process per paper (sequential by default), with resource-aware
-sizing when MAX_PARALLEL=auto, and a progress log the outer agent polls."""
+sizing when MAX_PARALLEL=auto, and a progress log."""
 from __future__ import annotations
 
 import os
@@ -74,11 +74,12 @@ def reset_paper_output(out_dir: pathlib.Path, paper: pathlib.Path) -> None:
     shutil.rmtree(out_dir / paper.stem, ignore_errors=True)
 
 
-def _result_status(result) -> tuple[bool, str]:
+def _result_status(result) -> tuple[bool, str, bool]:
     if isinstance(result, tuple):
-        ok, reason = result
-        return bool(ok), str(reason or "failed")
-    return bool(result), "failed"
+        ok, reason, *produced = result
+        return bool(ok), str(reason or "failed"), bool(produced[0] if produced else ok)
+    ok = bool(result)
+    return ok, "failed", ok
 
 
 def _process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns, model):
@@ -95,7 +96,7 @@ def _process_one(paper, out_dir, soon_days, max_ralph, inner_max_turns, model):
         f"paper_finish paper={paper.name} success={res.success} "
         f"passes={res.passes} reason={res.last_reason}"
     )
-    return res.success, res.last_reason
+    return res.success, res.last_reason, res.produced_agent_result
 
 
 def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
@@ -118,22 +119,26 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
 
     succeeded = 0
     done = 0
+    agent_result_stems = []
     if pool <= 1:
         for paper in papers:
             reset_paper_output(out_dir, paper)
             try:
-                ok, reason = _result_status(
+                ok, reason, produced_agent_result = _result_status(
                     process_one(paper, out_dir, soon_days, max_ralph,
                                 inner_max_turns, model)
                 )
             except Exception as exc:
                 ok = False
+                produced_agent_result = False
                 reason = f"{type(exc).__name__}: {exc}"
                 append_error(progress, paper, reason)
                 log_status(f"batch_error paper={paper.name} error={type(exc).__name__}")
             else:
                 if not ok:
                     append_error(progress, paper, reason)
+            if produced_agent_result:
+                agent_result_stems.append(paper.stem)
             succeeded += int(bool(ok))
             done += 1
             append_progress(progress, done, total)
@@ -150,15 +155,18 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
             for fut in as_completed(futs):
                 paper = futs[fut]
                 try:
-                    ok, reason = _result_status(fut.result())
+                    ok, reason, produced_agent_result = _result_status(fut.result())
                 except Exception as exc:
                     ok = False
+                    produced_agent_result = False
                     reason = f"{type(exc).__name__}: {exc}"
                     append_error(progress, paper, reason)
                     log_status(f"batch_error paper={paper.name} error={type(exc).__name__}")
                 else:
                     if not ok:
                         append_error(progress, paper, reason)
+                if produced_agent_result:
+                    agent_result_stems.append(paper.stem)
                 succeeded += int(bool(ok))
                 done += 1
                 append_progress(progress, done, total)
@@ -166,4 +174,9 @@ def run_batch(papers, out_dir, soon_days, max_ralph, inner_max_turns,
 
     write_sentinel(progress, total)
     log_status(f"batch_complete succeeded={succeeded} total={total} failed={total - succeeded}")
-    return {"total": total, "succeeded": succeeded, "failed": total - succeeded}
+    return {
+        "total": total,
+        "succeeded": succeeded,
+        "failed": total - succeeded,
+        "agent_result_stems": sorted(agent_result_stems),
+    }

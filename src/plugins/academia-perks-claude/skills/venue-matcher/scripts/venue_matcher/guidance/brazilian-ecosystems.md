@@ -1,13 +1,18 @@
-# Brazilian CS/IT venue map (the fallback country)
+# Brazilian CS/IT venue map (for an explicit Brazil audience scope)
 
-Starting launchpad — always verify the current edition by WebFetch. Brazil is
-the default country when the paper states none.
+Starting launchpad — always verify the current edition by WebFetch. Use this map
+only when Brazil is the one selected target geographic audience scope; Brazil is
+not the default when the paper states none.
+
+Use this map as a shortlist generator, not a checklist to narrate. Pick the
+few venues that fit the paper, verify them, rerank, and stop when the best home
+is clear.
 
 ## SBC — Sociedade Brasileira de Computação
 
 The umbrella body for Brazilian computing research. Hosts dozens of
 symposia, journals, and tracks. Worth surveying for almost any
-CS/IT-flavored paper with a Brazilian author or applied focus.
+CS/IT-flavored paper whose selected target geographic audience scope is Brazil.
 
 Notable venues (verify current editions):
 
@@ -91,7 +96,6 @@ When the paper is more practitioner / case-study than original research:
 
 ## Not on this list
 
-This map is intentionally limited to Brazilian-anchored venues. For
-papers with strong international fit, the search should also explore
-IEEE / ACM main conferences in the paper's specific subfield. That's
-the agent's call when reading the paper's IS/ISN'T statement.
+This map is intentionally limited to Brazilian-anchored venues. Do not broaden
+the search to international venues merely because they look like a strong fit;
+search them only when **International** is the one selected target scope.

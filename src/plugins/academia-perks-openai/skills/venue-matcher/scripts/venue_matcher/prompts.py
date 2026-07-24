@@ -9,13 +9,25 @@ import pathlib
 
 PROMISE_TAG = "<promise>VENUE-MATCH-COMPLETE</promise>"
 
-_GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md", "brazilian-ecosystems.md")
+_GUIDANCE_FILES = ("mindset.md", "venue-anatomy.md", "tips.md")
+
+CONCISION_POLICY = (
+    "Reason deeply; write briefly. Search iterations are working steps, not "
+    "deliverables: do not write "
+    "long prose while investigating, and do not preserve every thought in chat. "
+    "Use terse notes to decide fit, then Rerank after each verified candidate. "
+    "Long prose belongs only in ranking.md.\n"
+)
 
 SUMMARY_INSTRUCTION = (
-    "Em <=8 tópicos curtos, em português brasileiro, recapitule o que você "
+    "Em tópicos sucintos, em português brasileiro, recapitule o que você "
     "acabou de fazer nesta passagem: o que você buscou, o que encontrou, o que "
     "descartou e por quê, e o que ainda está em aberto. Sem prosa, sem "
-    "preâmbulo — apenas os tópicos."
+    "preâmbulo — apenas os tópicos. Inclua uma recapitulação cumulativa: "
+    "preserve os pontos ainda relevantes de <previous_pass_recap> e "
+    "acrescente/substitua com o que foi aprendido nesta passagem. Não descarte "
+    "fatos úteis de <previous_pass_recap> só porque eles não foram pesquisados "
+    "novamente agora."
 )
 
 
@@ -32,6 +44,7 @@ def build_system_prompt(guidance_dir: pathlib.Path | None = None) -> str:
     body = "\n\n---\n\n".join(parts)
     return (
         "You are a venue-matching agent. Follow this guidance exactly.\n\n"
+        f"{CONCISION_POLICY}\n"
         f"{body}\n"
     )
 
@@ -39,22 +52,58 @@ def build_system_prompt(guidance_dir: pathlib.Path | None = None) -> str:
 def build_user_order(paper_text: str, soon_days: int) -> str:
     return (
         "Classifique os veículos de publicação aos quais este artigo realmente "
-        "pertence e escreva ranking.json e ranking.md no seu diretório de "
-        "trabalho, em português brasileiro.\n\n"
-        "Mantenha as chaves de ranking.json em inglês exatamente como no "
-        "esquema. Escreva os valores textuais de ranking.json e todo o "
-        "ranking.md em português brasileiro. Não traduza nomes oficiais de "
-        "venues, URLs nem o texto do artigo.\n\n"
+        "pertence e escreva somente ranking.md no seu diretório de trabalho, "
+        "em português brasileiro. Não traduza nomes oficiais de venues, nem URLs.\n\n"
+        "Use exatamente um escopo geográfico de audiência alvo: use o escopo "
+        "declarado se houver um; se houver uma lista ou mais de um, use apenas o "
+        "primeiro declarado; se não houver, use International. Nunca amplie a "
+        "busca para um escopo declarado depois do primeiro.\n\n"
         f"Parâmetro soon_days: {soon_days}\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
-        "Esquema de ranking.json (chaves em inglês): "
-        "{\"paper\": {\"path\": str, \"is_statement\": str, "
-        "\"isnt_statement\": str}, \"params\": {\"soon_days\": int, "
-        "\"countries\": [str], \"as_of\": str}, \"open_now\": [{\"rank\": int, "
-        "\"name\": str, \"kind\": str, \"url\": str, \"country\": str, "
-        "\"deadline\": str, \"topics_matched\": [str], \"rationale\": str}], "
-        "\"opening_soon\": [...same...], \"closest_misses\": [...], "
-        "\"agent_notes\": str}\n\n"
-        "Texto do artigo (preserve exatamente como está; não traduza):\n"
+        "Estruture ranking.md com estas seções:\n"
+        "## Artigo\n"
+        "- Caminho ou origem do artigo.\n"
+        "- O que este artigo é.\n"
+        "- O que este artigo não é.\n\n"
+        "## Parâmetros\n"
+        "- soon_days.\n"
+        "- Escopo geográfico de audiência alvo considerado.\n"
+        "- Data de referência.\n\n"
+        "## Abertos agora\n"
+        "Liste, em uma única lista ranqueada em ordem de encaixe, venues com nome, "
+        "tipo, URL dos tópicos de interesse, URL do template latex da venue, escopo "
+        "de audiência, prazo, tópicos citados e justificativa específica para o "
+        "artigo.\n\n"
+        "## Abrindo em breve\n"
+        "Mesmo formato dos abertos agora, apenas para venues que abrem dentro "
+        "de soon_days.\n\n"
+        "## Quase encaixes\n"
+        "Liste os melhores descartados quando nenhum encaixe forte estiver "
+        "aberto ou abrindo em breve, explicando a limitação.\n\n"
+        "## Notas do agente\n"
+        "Registre buscas importantes, decisões e incertezas que afetam o "
+        "resultado.\n\n"
+        "---\n"
+        "## Texto do artigo:\n"
         f"{paper_text}\n"
     )
+
+
+def build_pass_user_order(user_order: str, pass_no: int, x: int) -> str:
+    if pass_no == x:
+        pass_order = (
+            f"você está na tentativa {x}/{x} de achar o melhor fit, essa é sua "
+            "última chance, entre em fase de polimento/encerramento para que não "
+            "deixe nada pra depois e entregue o resultado do ranking.md. Garanta "
+            "que entregue o ranking.md que mais o satisfaz por mais que esteja "
+            "insatisfeito"
+        )
+    else:
+        pass_order = (
+            f"você está na tentativa {(x + 1) // 2}/{x} de achar o melhor fit pro "
+            "paper. Você já fez 50% das tentativas de exploração (buscas) "
+            "disponiveis e pode fazer mais metade das tentativas disponíveis. "
+            "Aproveite pra pesquisar profundamente enquanto ainda não está perto "
+            "do fim."
+        )
+    return f"{pass_order}\n\n{user_order}"

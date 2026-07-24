@@ -15,4 +15,9 @@ if you did not cloned the repository and run it through the harness command prog
 more papers run sequentially instead of parallel. 
 Only `.docx` files are supported; other files in the selected input directory
 are ignored.
+
+The matcher uses exactly one target geographic audience scope: the paper's sole
+stated scope, or only the first if several are listed; if none is stated, the
+target is **International**. It ranks only venues whose primary geographic
+audience scope fits that one target.
 For batch (i.e. dev use, harness command program) see the repo root README.

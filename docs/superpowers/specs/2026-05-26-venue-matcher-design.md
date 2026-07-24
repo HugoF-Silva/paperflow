@@ -26,8 +26,8 @@ The skill is the brain. The app is industrial scale on top of it.
 
 - **No plugin distribution in this scope.** Repo laid out plugin-ready, but
   `.claude-plugin/plugin.json` is intentionally not in git yet.
-- **No template adaptation.** A future repo handles formatting to a venue's
-  template.
+- **No template adaptation.** The matcher may report a venue's own template URL,
+  but a future repo handles formatting to that template.
 - **No web UI.** App is CLI-only, run inside Docker.
 - **No within-iteration quality polishing.** The agent's neuroticism *inside*
   a single iteration is the quality bar; outer iterations exist only to
@@ -40,7 +40,7 @@ The skill is the brain. The app is industrial scale on top of it.
 | `--input-dir` | required | Directory of `.docx` papers |
 | `--output-dir` | required | Where rankings get written |
 | `--soon-days` | `31` | "Opening soon" upper bound |
-| `--countries` | `BR` | Comma-separated ISO-3166 codes |
+| `--audience-scopes` | `Brazil,International` | Comma-separated audience-scope labels |
 | `--max-parallel` | `auto` | Upper bound on workers; `auto` = derive from available CPU/RAM |
 | `--max-iterations` | `8` | Hard safety net for the outer ralph-style loop |
 | `--extra-skills-dir` | `[]` | Path(s) holding additional skills, outside the repo; repeatable |
@@ -108,7 +108,7 @@ Only `/venue-matcher` in the user prompt triggers it.
    *recognition of fit*. No counts, no quotas.
 2. **Inputs** — natural-language user prompt provides:
    - paper file path
-   - search constraints (soon-days, countries)
+   - search constraints (soon-days, audience scopes)
    - output path
    - the explicit instruction to use `/venue-matcher`
    The skill body **explains what each constraint means** (see §5.4) so the
@@ -117,19 +117,20 @@ Only `/venue-matcher` in the user prompt triggers it.
    methods, and real-world application. Write a one-paragraph "what this paper
    IS / what it ISN'T" statement.
 4. **Stage B — Discover candidate venues.** Spawn 2–4 parallel `Agent`
-   subagents, each with a *narrow* angle (niche keyword + country, broader
-   keyword + country, mother-language country search terms,
+   subagents, each with a *narrow* angle (niche keyword + audience scope, broader
+   keyword + audience scope, expected-language scope search terms,
    conference/journal/magazine/track).
    Subagents return URL lists, never verdicts.
 5. **Stage C — Read every candidate.** For each URL, `WebFetch` the CFP/about
    page. Extract: accepted topics, audience, constraints, registration
-   deadline, country, indexing. Compare against the paper's
+   deadline, audience scope, that exact venue's template URL (not a sibling
+   venue's template from the same site), indexing. Compare against the paper's
    IS/ISN'T statement. Decide real candidate, weak candidate, or ruled out.
    Write rationale. **Search snippets are never sufficient.**
 6. **Stage D — Bucket and rank.** Split survivors into `open_now` and
    `opening_soon` (registration deadline within `now + soon_days`). Rank by
-   fit DESC. Tie-breaks: country match → niche specificity → "vibes" (allowed,
-   but must include a one-line reason). Never rank or filter by language.
+   fit DESC. Tie-breaks: niche specificity → "vibes" (allowed, but must include
+   a one-line reason). Never rank or filter by the expected-language search hint.
 7. **Stage E — Recognize the fit.** Keep weighing "is this where the paper
    belongs?" Stop on recognition, however early or late. If nothing strongly
    clicks after honest, thorough searching, name the closest survivors and
@@ -143,7 +144,8 @@ Only `/venue-matcher` in the user prompt triggers it.
 - **`references/search-paranoia.md`** — concrete examples of
   lazy-vs-obsessive search so the agent can self-detect laziness.
 - **`references/venue-anatomy.md`** — exact fields to extract from a venue's
-  CFP page; what to do when fields are ambiguous (especially deadlines).
+  CFP page; what to do when fields are ambiguous (especially deadlines and
+  same-site template URLs).
 - **`references/brazilian-ecosystems.md`** — starting map of major BR venues
   across CS/IT: SBC portfolio (SBES, SBBD, SBIE, SBSI, …), IEEE LATAM, RBIE,
   REIT, SBPO, Embrapii's publication channels, magazines like *Computação
@@ -158,12 +160,12 @@ A short, explicit explanation the agent reads when invoked:
 > as "opening_soon"; venues already open as "open_now". This bound is the
 > user's tolerance for waiting.
 >
-> **`countries`** — Comma-separated ISO-3166 alpha-2 country codes (default
-> `BR`). Strongly prefer venues with primary affiliation in these countries.
-> Venues outside the list are not banned, but they need much stronger
-> thematic fit to outrank a same-country venue. Use each target country's
-> mother language for discovery searches, but do not use language as an
-> eligibility rule or tie-breaker.
+> **`audience_scopes`** — Comma-separated audience-scope labels (default
+> `Brazil,International`). Only venues whose primary audience scope fits these
+> labels are candidates. Build one combined ranking from venues found across all
+> included scopes; do not create one ranking per scope or require every scope to
+> be represented. Use each allowed scope's expected language for discovery
+> searches, but do not use that language hint as an eligibility rule or tie-breaker.
 >
 > **`output_path`** — Absolute path to the directory where
 > `ranking.json` and `ranking.md` must be written. Do not write anywhere else.
@@ -320,7 +322,7 @@ services:
       --input-dir /work/papers
       --output-dir /work/results
       --soon-days 31
-      --countries BR
+      --audience-scopes Brazil,International
 ```
 
 ### 8.3 Docker Compose (the user-facing surface)
@@ -373,11 +375,12 @@ Search constraints:
 - Today's date: 2026-05-26.
 - Open now OR opening within 31 calendar days from today. Reject anything
   whose registration opens later than that.
-- Country preference: BR (primary). Non-BR venues are allowed only when their
-  thematic fit is markedly stronger than any BR alternative.
-- Search wording: use Brazilian Portuguese query terms for Brazil, because it is
-  the country's mother language. Do not infer countries from the paper's
-  language, and do not filter or rank venues by accepted language.
+- Audience scope boundary: Brazil and International. Only venues whose primary
+  audience scope fits one of these labels are candidates; rank all such venues
+  together, with no per-scope quota.
+- Search wording: use the expected language for each allowed audience scope.
+  Do not infer audience scope from the paper's language, and do not filter or
+  rank venues by the expected-language search hint.
 
 Write your final ranking to:
 - /work/results/<basename>/ranking.json
@@ -488,7 +491,7 @@ Portuguese; keep official venue names and URLs as published.
   },
   "params": {
     "soon_days": 31,
-    "countries": ["BR"],
+    "audience_scopes": ["Brazil", "International"],
     "as_of": "2026-05-26T14:30:00-03:00"
   },
   "open_now": [
@@ -497,7 +500,8 @@ Portuguese; keep official venue names and URLs as published.
       "name": "SBSI 2026",
       "kind": "conference|journal|magazine|track|workshop",
       "url": "https://…",
-      "country": "BR",
+      "template_url": "https://…",
+      "audience_scope": "Brazil",
       "deadline": "2026-06-15",
       "topics_matched": ["SI na indústria", "IA aplicada"],
       "rationale": "Parágrafo específico ligando a contribuição do artigo aos tópicos declarados do venue. Sem generalidades."
@@ -577,7 +581,7 @@ def build_orchestrator(args) -> Orchestrator:
         output_dir=args.output_dir,
         user_max_parallel=args.max_parallel,
         soon_days=args.soon_days,
-        countries=args.countries,
+        audience_scopes=args.audience_scopes,
     )
 ```
 

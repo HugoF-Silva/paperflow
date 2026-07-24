@@ -1,5 +1,5 @@
 """Extract the full textual content of a .docx, headers/tables included, so the
-author's stated allowed countries (usually the header) ride along in the text."""
+author's stated target audience scope rides along in the text."""
 from __future__ import annotations
 
 import pathlib
@@ -10,7 +10,7 @@ def extract_text(docx_path: pathlib.Path) -> str:
     doc = Document(str(docx_path))
     chunks: list[str] = []
 
-    # Section headers/footers (where authors often write allowed countries).
+    # Section headers/footers (where authors often write the target audience scope).
     for section in doc.sections:
         for container in (section.header, section.footer):
             for para in container.paragraphs:

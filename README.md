@@ -1,10 +1,11 @@
 # paperflow - academia-perks-claude and academia-perks-openai plugins
 
 `academia-perks-claude` and `academia-perks-openai` are academic publishing
-plugins with separate Claude and Codex/OpenAI payloads. Their first skill,
-**venue-matcher**, finds the publication venues a paper belongs to (conferences,
-journals, magazines, tracks, workshops), ranked by fit, split into "open now"
-and "opening soon".
+plugins with separate Claude and Codex/OpenAI payloads. Their **venue-matcher**
+skill finds the publication venues a paper belongs to (conferences, journals,
+magazines, tracks, workshops), ranked by fit and split into "open now" and
+"opening soon". The OpenAI plugin also converts papers into venue-compliant
+LaTeX submissions, either after matching or from an explicit venue/template.
 
 ## Ways to use it
 
@@ -14,7 +15,7 @@ venue-matcher to find a venue for my paper", and provide the API key value if
 the skill asks for it.
 A single paper targets the ~5-minute sandbox limit. More papers run sequentially
 and may exceed it — **use one session per paper**. Results are written to
-`results/<paper>/ranking.{json,md}`.
+`results/<paper>/ranking.md`.
 
 ### Developer (local, Docker)
 Docker Desktop must be open and the Docker engine must be running on your
@@ -26,11 +27,23 @@ cp ops/.paperflow.local.toml.example ops/.paperflow.local.toml
 # put, copy, symlink, or mount .docx files under ./src/papers
 make -C ops run-openai
 ```
-The smallest developer command is `make -C ops run-openai` for
-OpenAI/Codex, or `make -C ops run-anthropic` for Claude. The provider
-must be explicit; there is no default. The Make shortcuts always use the host
-`./src/papers` folder. If your papers live elsewhere, put them there by copy,
-symlink, junction, or host mount. Runtime code and I/O live under `src/`; Docker
+`make -C ops run-openai` runs the OpenAI matcher-and-converter workflow;
+`make -C ops run-anthropic` retains the Claude matcher-only workflow. The
+provider must be explicit; there is no default. For standalone OpenAI
+conversion, supply exactly one of these mutually exclusive inputs:
+
+```bash
+make -C ops run-openai-converter chosen-venue='Venue A template: https://venue.example/template'
+make -C ops run-openai-converter template-path='/app/src/templates/venue-a.zip'
+```
+
+`chosen-venue` is a venue-and-template evidence paragraph. `template-path` is
+a container path to an existing LaTeX template package; because Compose mounts
+the whole host `./src` tree at `/app/src`, the file must be placed under
+`./src` and named through its `/app/src/...` path. Supplying neither or both
+inputs fails before Compose starts the outer agent. The Make shortcuts always
+use the host `./src/papers` folder. If your papers live elsewhere, put them there
+by copy, symlink, junction, or host mount. Runtime code and I/O live under `src/`; Docker
 Compose mounts the whole `./src` tree at `/app/src` so the container tree mirrors
 the host, and passes `/app/src/papers` as the input dir through
 `ops/docker-compose.yml`. Operational files (`ops/docker-compose.yml`,
@@ -47,18 +60,40 @@ operational config directory. There is no
 runs `docker compose down -v` and `make -C ops prune` runs
 `docker system prune -f -a --volumes`.
 
-That command starts `python -m harness.cli` inside the `matcher` container. The
-harness builds the outer-agent prompt, loads the selected plugin, and starts the
-outer agent; the outer agent follows the `venue-matcher` skill and runs the
-bundled matcher program. The prompt includes the selected API key and model
-values; the loaded skill decides whether to set `OPENAI_API_KEY` or
-`ANTHROPIC_API_KEY`, and sets `VENUE_MATCHER_MODEL`, before running the matcher.
+Those commands start `python -m harness.cli` inside the
+`matcher-or-converter` container. The harness builds the mode-specific
+outer-agent prompt, loads the selected plugin, and starts the outer agent.
+OpenAI matching hands completed per-paper results to the converter; standalone
+mode loads only the converter workflow. The Anthropic route remains
+matcher-only. The prompt includes the selected API key and model values; the
+outer agent sets `VENUE_MATCHER_MODEL` for matching or `CONVERTER_MODEL` for
+conversion before running the corresponding bundled program.
 Each harness run resets `./src/results/_execution.log`
 before the outer agent starts; that file mirrors the timestamped harness, tool,
 CLI, inner-agent, and batch status stream, plus the final outer-agent response,
 that also appears in container logs.
 The matcher consumes only `.docx` files from the selected input directory and
 ignores other file types.
+
+Conversion uses the Pandoc binary bundled by `pypandoc-binary` to preserve the
+DOCX body order, formulas, and figures as structured Markdown. The inner agent
+then creates the minimal venue submission tree and Tectonic compiles and checks
+the LaTeX. Compose pins the service to `linux/amd64` to match the approved
+x86_64 Tectonic binary; ARM hosts therefore run it through Docker's AMD64
+emulation. Successful combined and standalone runs write under the mounted host
+tree:
+
+```text
+src/results/
+├── _converter_progress.log
+└── <paper>/
+    ├── ranking.md              # retained when matching ran first
+    ├── downloads/              # downloaded template source material
+    └── converted/
+        ├── main.tex
+        ├── main.pdf
+        └── required .cls/.sty/.bst and support files
+```
 
 This split is intentional: `harness/` is just one possible **outer agent** —
 our own dev/Docker implementation of the generic contract described in the
@@ -82,10 +117,12 @@ status lines to stdout/stderr.
 Required harness env: the selected provider API key: `OPENAI_API_KEY` for
 OpenAI/Codex, or `ANTHROPIC_API_KEY` for Claude. Optional model overrides are
 `OPENAI_MODEL` and `ANTHROPIC_MODEL`; defaults live in the harness config. The
-outer agent passes the resolved model to the inner matcher as
-`VENUE_MATCHER_MODEL`. Tunables (dev-only, never visible to the agent):
-`MAX_PARALLEL` (default 1, or `auto`), `MAX_RALPH` (default 8),
-`INNER_MAX_TURNS` (default 50). Set them in `ops/.env` or the shell.
+outer agent passes the resolved model to the inner program as
+`VENUE_MATCHER_MODEL` or `CONVERTER_MODEL`; users do not set those inner-model
+variables in `ops/.env`. The container defaults `OUTPUT_DIR` to
+`/app/src/results`; Compose defaults `MAX_PARALLEL` to `auto` and `MAX_RALPH` to
+`4`, while `INNER_MAX_TURNS` defaults to `50`. These tunables are developer-only
+and never visible to the agent. Set them in `ops/.env` or the shell.
 
 ### Codex (local or repo marketplace)
 This repo also contains a Codex/OpenAI plugin copy at
@@ -105,11 +142,13 @@ For a published Git repo, use the GitHub shorthand or Git URL instead of the
 local path. This makes the plugin available to users who add that marketplace;
 it does not publish the plugin to Codex's public OpenAI-curated directory.
 The Codex plugin copy sets the provided API key value as `OPENAI_API_KEY`, uses
-`openai-agents`; the Claude plugin copy lives at
+`openai-agents`, and bundles both `venue-matcher` and `converter`; the Claude
+plugin copy lives at
 `src/plugins/academia-perks-claude/` and sets the provided API key value as
 `ANTHROPIC_API_KEY`. In both copies, the outer agent sets `VENUE_MATCHER_MODEL`
 for the inner matcher, using a model that matches the provider/runtime of the
-agent reading the skill.
+agent reading the skill. For OpenAI conversion, it similarly sets
+`CONVERTER_MODEL`.
 
 ## How it works
 An **outer agent** runs the bundled `venue_matcher` program; the program spawns
@@ -118,12 +157,19 @@ neurotic **inner agent** that web-searches and ranks venues, carrying a
 compacted recap from each pass into the next as its own first "memory". The
 Claude copy uses Claude tool names (`Read`, `Write`, `WebSearch`, `WebFetch`);
 the Codex copy uses OpenAI Agents SDK web search plus local read/write/fetch
-function tools. Targeting is country-only (from the paper; Brazil if unstated).
-The inner agent uses the target country's mother language for web-search terms
-so local venue pages surface, but language is not a venue filter or ranking
-factor. The inner artifacts are written in Brazilian Portuguese (`ranking.json`
-keeps English keys); the outer agent reports the full ranking.md content in the
+function tools. Targeting uses exactly one geographic audience scope: use the
+sole scope stated in the paper; if the paper lists several, use only the first;
+if it states none, use **International**. The inner agent may use that selected
+scope's expected language for web-search terms so relevant venues surface, but
+only venues whose primary geographic audience scope fits that one target are
+rankable. It writes one ranking of those eligible venues.
+For each ranked venue, it also records that exact venue's template URL when
+verified. The OpenAI/Codex matcher writes the ranking artifacts in Brazilian
+Portuguese Markdown; the outer agent reports the full ranking.md content in the
 user's preferred language, defaulting to the language the user is already using,
 and provides the `ranking.md` file for download when its environment supports
-file attachments or links.
+file attachments or links. The OpenAI workflow can then obtain or inspect the
+selected venue's LaTeX template, faithfully transfer the paper, and require a
+successful Tectonic build before reporting the converted `main.tex` and
+`main.pdf`.
 See `docs/superpowers/specs/2026-06-20-venue-matcher-design.md`.
