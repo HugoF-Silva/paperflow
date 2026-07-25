@@ -4,6 +4,7 @@ from __future__ import annotations
 import io
 import pathlib
 import re
+import shutil
 import tempfile
 from urllib.parse import unquote
 
@@ -17,7 +18,6 @@ _IMAGE_REFERENCE = re.compile(
     r'(?P<title>\s+(?:"[^"]*"|\'[^\']*\'|\([^)]*\)))?\)'
     r'(?P<attrs>\{[^}\r\n]*\})?'
 )
-_OWNED_FIGURE = re.compile(r"figure-\d{3,}\.jpg")
 _RASTER_SUFFIXES = {".bmp", ".gif", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".webp"}
 
 
@@ -92,16 +92,8 @@ def _normalize_figures(
         return f'![{reference.group("alt")}](<{final_path.as_posix()}>{title}){attrs}'
 
     normalized = _IMAGE_REFERENCE.sub(replace, markdown)
-    current_names = {staged.name for staged in figures.values()}
     for staged in figures.values():
         staged.replace(figure_dir / staged.name)
-    for existing in figure_dir.iterdir():
-        if (
-            existing.is_file()
-            and _OWNED_FIGURE.fullmatch(existing.name)
-            and existing.name not in current_names
-        ):
-            existing.unlink()
     return normalized
 
 
@@ -140,7 +132,9 @@ def extract_paper(docx_path: pathlib.Path) -> str:
     """Return Markdown for ``docx_path`` and write stable adjacent JPEG figures."""
     docx_path = pathlib.Path(docx_path).resolve()
     figure_dir = docx_path.parent / docx_path.stem
-    figure_dir.mkdir(parents=True, exist_ok=True)
+    if figure_dir.exists():
+        shutil.rmtree(figure_dir)
+    figure_dir.mkdir(parents=True)
     with tempfile.TemporaryDirectory(dir=figure_dir) as raw_dir:
         markdown = pypandoc.convert_file(
             str(docx_path),
