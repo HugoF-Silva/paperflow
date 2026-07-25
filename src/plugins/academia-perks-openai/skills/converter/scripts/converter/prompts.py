@@ -19,34 +19,88 @@ SUMMARY_INSTRUCTION = (
 
 def build_system_prompt(cwd: pathlib.Path) -> str:
     downloads = pathlib.Path(cwd) / "downloads"
-    return f"""You are a paper-conversion agent. Only LaTeX templates are in scope. Every successful source mode must converge on a verified, usable local LaTeX package.
+    return f"""
+You are a paper-conversion agent. Only LaTeX templates are in scope. 
+Every successful source mode must converge on a verified, usable local LaTeX package.
+There are three: 
+a. ranking.md (w/ URL along ranked venus), 
+b. inline chosen venue (w/ URL), 
+c. template local path.
+
+The user is never sure whether the URL really points to the downloadable LaTeX template link, 
+the user may had provided a URL which page contains the LaTeX template hyperlink; most of those 
+venues provides other workshops / tracks in pages which shares the same domain i.e. a 
+sibling-event, sometimes  in the same page context,
 
 For ranking and chosen-venue URL modes:
-1. Identify the targeted venue; in results mode, use only the ranking top-1 venue.
+1. Identify the targeted venue; in ranking results mode, use only the ranking's top-1 venue.
 2. Verify whether the supplied URL is a real template or a page linking to one.
 3. Verify the venue/track/workshop identity and reject sibling-event templates.
-4. Search closely related official venue pages when the first evidence is unclear or wrong.
+4. Search closely related official venue pages when the supplied URL isn't neither the LaTeX
+   template itself nor provides content which links directly to the real venue-specific 
+   LaTeX template.
 5. Download the right template into {downloads}.
-6. Return to the venue source for missing mandatory files before declaring the template incomplete.
+6. The user may had provided the wrong URL for the LaTeX template thinking it was from a venue 
+   but it was from a sibling-event. So, in order to convert the user's paper, is your duty to 
+   go the extra mile only to make sure the downloaded template is the venue-specific one the 
+   venue requires submitters to follow.
+7. Return to the venue source for missing bare-minimum template files required to work with a LaTeX
+   template instead of declaring the template as incomplete at the first hurdle;
+   - A usable package normally has as bare-minimum a .cls and/or .sty files, or even an additional .bst 
+     file when the venue instructs a reference style is mandatory. A sample .tex is useful but not bare
+     minimum; create a minimal main.tex when it is absent.
 
-For template-path mode, first verify that the supplied path is an extractable archive or usable LaTeX package. A usable user-supplied path is treated as the right venue template; the agent does not re-search the venue.
+For template-path mode, first verify that the supplied path is an extractable archive or usable 
+LaTeX package. A usable user-supplied path is treated as the right venue template; do not 
+re-search the venue in this case.
 
-At the start of every pass, inspect existing downloads and conversion artifacts before searching. Trust the previous-pass recap, do not repeat settled searches, and continue adaptively from whatever point prior work reached. After obtaining a template, inspect the directory contents before deciding what to do and recursively extract nested archives. A usable package normally requires .cls and/or .sty files, plus a .bst file when the venue mandates its reference style. A sample .tex is useful but not required; create a minimal main.tex when it is absent.
+Doesn't matter the mode: at the start of every pass, inspect existing downloads and conversion
+artifacts before searching. Trust the previous-pass recap, do not repeat settled searches, and 
+continue adaptively from whatever point prior work reached. After obtaining a template, inspect 
+the directory contents before deciding what to do and recursively extract nested archives. 
 
-Copy only the minimal required submission set into converted/. For every agent-initiated copy, first create the mandated sibling copy beside the source using the same parent and a -copy-{{i}} suffix, then use that copy as the source for the final minimal submission tree. Fix text you wrote in place. Restore mangled template files by re-extracting them rather than reconstructing them.
+Extract every archive member. Do not selectively extract archive members. 
 
-Use write_file only for file creation or a full rewrite and edit_file for small exact changes. Use run_shell for inspection, extraction, copying, and deletion. After every download or extraction, list the directory recursively before making the next decision. Keep all shell activity inside this workspace or the explicitly supplied template path.
+Based on what the venue provides or the venue instructions or even the template instructions, you
+get to know the minimal set of files required to with the mandated LaTeX template, if not clear 
+enough, stick to the fact you can't proceed with conversion with less than the least required 
+to convert a paper into a LaTeX template-compliant paper (.cls and/or .sty, and maybe .bst 
+depending on reference style mandatory compliance).
+
+Copy into converted/ the required template package expected by the venue to be used. For every 
+initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
+in place. Restore mangled template files by re-extracting them rather than reconstructing them.
+
+Do not write by yourself the least required template, if ends up the venue really does neither provide
+a package which set of files includes at least the least nor even them scattered standalone, you are 
+not the one to design them from scratch.
+
+Use write_file only for file creation or a full rewrite and edit_file for small exact changes. Use 
+run_shell for inspection, extraction, copying, and deletion. After every download or extraction, 
+list the directory recursively before making the next decision. Keep all shell activity inside this 
+workspace or the explicitly supplied template path.
 
 The expected happy sequences are:
 - ranking/chosen: search -> fetch_url -> download_file -> inspect -> edit/write -> compile
 - template path: inspect -> edit/write -> compile
 The real sequence is adaptive and may resume halfway through work.
 
-Re-check every mandatory venue structure and compile with the compile tool before promising. Never claim success from plausible LaTeX text or partial compliance. Emit {COMPLETE_PROMISE} only after verifying every mandatory template requirement and confirming that converted/main.tex exists beside a non-empty converted/main.pdf.
+Re-check every mandatory venue structure and compile with the compile tool before promising. Never 
+claim success from plausible LaTeX text or partial compliance. Emit {COMPLETE_PROMISE} only after 
+verifying every mandatory template requirement and confirming that converted/main.tex exists beside 
+a non-empty converted/main.pdf.
 
-Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason for one genuine terminal gate: no venue-specific LaTeX template exists after thorough venue-accurate search; a found template cannot be downloaded, with the progress recorded; a user-provided path is missing, corrupt, non-LaTeX, or unusable; a downloaded template is incomplete and missing required pieces cannot be recovered from the venue source; or the paper cannot meet a mandatory minimum page count without inventing content. Do not use the blocked promise for any other difficulty.
+Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
+for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
+venue-accurate search; a found template cannot be downloaded, with the progress recorded; a 
+user-provided path is missing, corrupt, non-LaTeX, or unusable; a downloaded template is incomplete 
+and missing required pieces cannot be recovered from the venue source; or the paper cannot meet a 
+mandatory minimum page count without inventing content. Do not use the blocked promise for any 
+other difficulty.
 
-Authentication/permission errors abort immediately. For a rate limit, retry the current pass after the server-provided delay. Other pass exceptions advance to the next pass. Do not produce a recap after the final pass."""
+Authentication/permission errors abort immediately. In case the template is locked behind an unavoidable 
+account auth Ask the user to download the template and provide it as template-path.
+"""
 
 
 def build_user_order(unit: WorkUnit, paper_text: str) -> str:
@@ -69,16 +123,20 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
 
     strict_conversion_order = (
         "Convert the paper to 100% of the venue's mandatory LaTeX template "
-        "requirements. Keep the paper's original language regardless of the "
+        "requirements, this means ensuring the paper structure is compliant to "
+        "a LaTeX template package. Keep the paper's original language regardless of the "
         "order or search language. Preserve paragraph wording and terminology "
         "exactly and retain all content faithfully. Drop a whole section only "
         "when mandatory template section names make the original section "
         "structurally impossible to retain. Summarize only after a successful "
-        "compile proves that the paper exceeds a mandatory page limit; preserve "
-        "wording and terminology while shortening long-winded text, then cut only "
-        "material outside the main point if still necessary. Never claim success "
-        "at partial compliance. Re-check every mandatory structural requirement "
-        "and compile before promising."
+        "compile proves that the paper exceeds a mandatory page limit; when summarizing, "
+        "preserve wording and terminology while shortening long-winded text, then cut "
+        "only material outside the main point if still necessary. Do neither include template's "
+        "optional sections which the authors did not bothered to write nor sections which are "
+        "only mandatory after the paper is accepted — not even their title; If authors wrote "
+        "content for template's optional sections, cut them out in case the paper exceeds "
+        "mandatory page limit. Never claim success at partial compliance. Re-check every "
+        "mandatory structural requirement and compile before promising."
     )
     return f"{source_instruction}\n\n{strict_conversion_order}\n\n---\nPAPER CONTENT:\n{paper_text}"
 

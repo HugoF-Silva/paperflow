@@ -34,14 +34,15 @@ perform the conversion yourself.
      as the only optional source. Do not gate this choice on ranking files.
    - Exactly one completed result: locate its workspace from the reported paper
      stem. If its `ranking.md` exists, read it, show its venues in descending
-     order, and explain that Paperflow will attempt conversion with that venue's
+     order, and explain that converter will attempt conversion with that venue's
      LaTeX template. Then call `request_user_input` to ask which venue the user
      wants.
      The handoff is incomplete until that tool is called; a plain-text question
      is not a substitute.
      After selection, use `--chosen-venue` with a paragraph linking
-     the selected venue to its template URL or evidence. If exactly one result
-     has no `ranking.md`, report that outcome and do not launch conversion.
+     the selected venue to its template URL or evidence. If that exactly one 
+     completed result has no `ranking.md`, report that outcome and do not 
+     launch conversion.
    - Zero completed results: report the no-result outcome and do not launch
      conversion, even when stale or early-created ranking files exist.
    - For a standalone request, use `--chosen-venue` for one explicit venue and
@@ -78,5 +79,10 @@ perform the conversion yourself.
      (--results-dir <path> | --chosen-venue <paragraph> | --template-path <path>)
    ```
 
-6. Report the outcome and relevant file paths in the user's preferred language.
-   If the user did not state one, use the language already used with them.
+6. Report the outcome and relevant file paths (or even the files itself if you can) 
+   in the user's preferred language. If the user did not state one, use the language 
+   already used with them. If you can provide the file itself besides the file path 
+   to the user, provide it. if it ends up with more than one completed/blocked 
+   converter-agent result, do not propagate requests/appeals to user neither through 
+   `request_user_input` nor other mechanism; instead, simply report all completed 
+   outcomes.
