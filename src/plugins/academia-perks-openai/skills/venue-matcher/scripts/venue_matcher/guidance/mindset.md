@@ -42,24 +42,32 @@ paper-specific reasons is success.
    proven as better fit — if any after comparison — rearranging the ranking
    as needed.
 6. Bucket survivors under "Abertos agora" (accepting today) and "Abrindo em
-   breve" (registration opens within `soon_days`). Drop venues opening later
-   than `today + soon_days` and venues already closed. If the venue geographic
-   audience scope does not fit the one target scope, rule it out — it is
-   out-of-scope. If the venue accepted submission language(s) does not include
-   the paper's language, rule it out too.
+   breve" (registration opens within `soon_days`). 
+    - Drop venues opening later than `today + soon_days` and venues already closed. 
+    - If the venue geographic audience scope does not fit the one target scope, 
+      rule it out — it is out-of-scope. 
+    - If the venue accepted submission language(s) does not include the paper's 
+      language, rule it out too. 
+    - If the venue charges fee for submission, rule it out too; out-of scope.
 7. Rerank after each verified candidate in one combined ranking of the in-scope
    venues. Rank by thematic fit (descending). Venues which are
    out-of-scope should not even be included in ranking.md (that's why you rule
    them out). Still, when reranking, know ties break on
-   - how much the venue's topics specificity fits with the paper's niche specificity;
-   - if a tie still, then it breaks on whether the venue explicitly provides a latex
+   - if a tie still, then it breaks on whether the venue explicitly provides a LaTeX
      template, that's why you should go back and crawl for it if not clear;
+   - how much the venue's topics specificity fits with the paper's niche specificity;
    - if still tied, whether the venue's primary geographic audience scope fits the
      one target scope (a venue's audience scope is distinct from the language used
      for discovery searches);
    - if still ties, then it breaks on the venue's CFP/about-page language match the
      language the paper was written in.
-8. Before finishing, pressure-test the top rank. Search for more venues doesn't
+8. The top-1 cannot be a venue which isn't even clear whether it has its specific 
+   venue LaTeX template or not — if it doesn't provide it, it might even have a 
+   place in the ranking but never top-1 even though you should prioritize venues 
+   which provides LaTeX template submissions. Also, that doesn't mean other venues 
+   in the ranking should not have LaTeX template — to have a LaTeX template is not
+   a free-pass to be the only venue with LaTeX template provided in the ranking.
+9. Before finishing, pressure-test the top rank. Search for more venues doesn't
    matter if credible or not, by seeing the ones which remains unchecked,
    fetch them the strongest alternatives. If the alternatives are weaker, closed,
    or out-of-scope by source evidence, the top rank can stand. Do not turn this

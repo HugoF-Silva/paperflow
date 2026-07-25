@@ -58,6 +58,7 @@ def build_user_order(paper_text: str, soon_days: int) -> str:
         "declarado se houver um; se houver uma lista ou mais de um, use apenas o "
         "primeiro declarado; se não houver, use International. Nunca amplie a "
         "busca para um escopo declarado depois do primeiro.\n\n"
+        "Não inclua venues que exigem pagamento de taxa para submissão.\n\n"
         f"Parâmetro soon_days: {soon_days}\n"
         f"Data de hoje: {date.today().isoformat()}\n\n"
         "Estruture ranking.md com estas seções:\n"
