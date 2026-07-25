@@ -53,7 +53,7 @@ def select_work_units(
             workspace = _resolve_workspace(results_dir, workspace)
             paper = papers_by_stem.get(workspace.name)
             if paper is None:
-                raise ValueError(f"No exact .docx mapping for results workspace {workspace.name}")
+                continue
             units.append(
                 WorkUnit(paper, workspace, "results", (workspace / "ranking.md").as_posix())
             )
