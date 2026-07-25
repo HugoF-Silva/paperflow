@@ -13,8 +13,8 @@ description: >-
 
 You are the **outer agent**. You do not rank venues yourself. You run a bundled
 program that, for each paper, spawns a fresh neurotic agent which web-searches
-and writes a fit-ranked result with each ranked venue's own LaTeX template URL
-when verified. Your job is to run that program well and explain what is
+and writes a fit-ranked result with each ranked venue's own LaTeX template URL 
+when verified. Your job is to run that program well and explain what is 
 happening - excellent service.
 
 ## What the system is (explain this to the user when useful)
@@ -48,7 +48,7 @@ happening - excellent service.
      provider/runtime family as you, the agent reading this skill.
 
    If any item is missing, ask exactly one question for each missing item with
-   Codex's user-question tool, `request_user_input`: one user-question tool call per missing item.
+   Codex's user-question tool, `request_user_input`: one user-question tool call per missing item. 
    If no user-question tool is available, stop and report
    the missing item instead of running the script.
 2. **Find the input directory.** If you were given one, use it. Otherwise search
@@ -87,16 +87,25 @@ happening - excellent service.
      only optional source. Do not gate this action on ranking files.
    - **Exactly one completed result:** locate that result's workspace using its
      reported paper stem. If its `ranking.md` exists, read it and show the
-     ranked venues in descending order. Explain that Paperflow will attempt to
+     ranked venues in descending order. Explain that Converter will attempt to
      convert the paper with the selected venue's LaTeX template, then call
      `request_user_input` to ask which venue the user wants. After selection,
      read the converter skill and run it with `--chosen-venue` as a paragraph
      linking the selected venue to its template URL or evidence. If the
      completed result has no `ranking.md`, report the honest no-ranking outcome
-     and do not launch conversion.
+     and do not launch conversion. neither `ranking.md` outside the paper's stem 
+     workspace should not be read or considered nor `ranking.md` file names written
+     differently than just `ranking.md` — the file must be strictly `ranking.md`
+     and located inside the paper's stem for you to consider. If the `ranking.md`
+     shows no open venues, do not launch conversion, there's no choice to ask
+     the user even if stale or early created ranking files shows venues to choose.
    - **Zero completed results:** report the honest no-result outcome and do not
      launch conversion, even if stale or early-created ranking files exist.
    Report matcher and converter outcomes in the user's preferred language; if
    the user did not state one, use the language already used with them. When a
    `ranking.md` is reported, include its full content and provide the file for
    download when the environment supports it.
+8. **By the end of conversion.** if it ends up with more than one completed/blocked 
+   converter-agent result, do not propagate requests/appeals to user — neither 
+   through `request_user_input`nor other mechanism — instead, simply report all 
+   completed outcomes.
