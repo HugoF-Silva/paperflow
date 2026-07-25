@@ -7,8 +7,8 @@
   "description": "Academia Perks — plugins that automate manual parts of the academic publishing workflow.",
   "plugins": [
     {
-      "name": "academia-perks-claude",
-      "source": "./src/plugins/academia-perks-claude",
+      "name": "academia-perks-openai",
+      "source": "./src/plugins/academia-perks-openai",
       "displayName": "Academia Perks",
       "description": "Find fit-ranked publication venues for a paper — conferences, journals, magazines, tracks, and workshops, split into open-now and opening-soon.",
       "author": {

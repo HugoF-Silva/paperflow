@@ -1,5 +1,5 @@
 {
-  "name": "academia-perks-claude",
+  "name": "academia-perks-openai",
   "version": "0.1.0",
   "description": "Use this to automate some of the academic publishing workflow manual parts.",
   "author": { "name": "Hugo Fernandes Silva" },
