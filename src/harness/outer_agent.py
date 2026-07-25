@@ -50,7 +50,7 @@ _FILE_READ_LIMIT = 500_000
 _LOG_POLL_RESULT_LIMIT = 4_000
 _MAX_LOGGED_TOOL_LINE_CHARS = 1_000
 _AGENT_LOG_REFERENCES = ("_execution.log", "_progress.log", "vm.out")
-_AGENT_LOG_LINE_PREFIXES = ("[venue-matcher] ", "[paperflow] ")
+_AGENT_LOG_LINE_PREFIXES = ("[venue-matcher] ", "[converter] ", "[paperflow] ")
 _SECRET_ASSIGNMENT_RE = re.compile(
     r'''((?:OPENAI|ANTHROPIC)_API_KEY=)(?:"[^"]*"|'[^']*'|\S+)'''
 )

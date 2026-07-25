@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import pathlib
 import re
 from dataclasses import dataclass
@@ -16,9 +17,24 @@ class PassResult:
     last_text: str
 
 
-def log_status(message: str) -> None:
+def log_status(message: str, body: str | None = None) -> None:
     stamp = datetime.now(tz=timezone.utc).astimezone().isoformat(timespec="seconds")
-    print(f"[converter] {stamp} {message}", flush=True)
+    line = f"[converter] {stamp} {message}"
+    print(line, flush=True)
+    path = os.environ.get("PAPERFLOW_EXECUTION_LOG")
+    if not path:
+        return
+    try:
+        target = pathlib.Path(path)
+        target.parent.mkdir(parents=True, exist_ok=True)
+        with target.open("a", encoding="utf-8") as fh:
+            fh.write(line + "\n")
+            if body:
+                fh.write(body)
+                if not body.endswith("\n"):
+                    fh.write("\n")
+    except OSError:
+        return
 
 
 _DELAY_RE = re.compile(
@@ -198,7 +214,8 @@ async def run_pass(
                     log_status(
                         f"inner_agent_event {context} turn={turn_no} event_no={event_no} "
                         f"event=ModelResponse final_output={'true' if final_output else 'false'} "
-                        f"output_chars={len(text)}"
+                        f"output_chars={len(text)}",
+                        f"output_text=\n{text}" if text else None,
                     )
                     if event_type == "response.completed":
                         consecutive_rate_limit_errors = 0
