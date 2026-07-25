@@ -1,0 +1,6 @@
+# The image bakes the code under /app/src; runtime I/O comes from the ./src mount
+# at runtime, so keep input papers and generated results out of the build context.
+.git
+src/papers
+src/results
+**/__pycache__

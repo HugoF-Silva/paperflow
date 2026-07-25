@@ -1,8 +1,0 @@
-{
-  "name": "academia-perks",
-  "version": "0.1.0",
-  "description": "Use this to automate some of the academic publishing workflow manual parts.",
-  "author": { "name": "Hugo Fernandes Silva" },
-  "license": "MIT",
-  "keywords": ["academia", "publishing", "venues", "call-for-papers", "research"]
-}

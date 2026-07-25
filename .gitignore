@@ -1,12 +1,18 @@
 # env
-.env
-.env.local
+ops/.env
+ops/.env.local
 
 # local extras config (per-machine, not in git)
-.paperflow.local.toml
+ops/.paperflow.local.toml
 
-# runtime artifacts
-results/
+# runtime artifacts. ./src is bind-mounted into the matcher-or-converter container so its tree
+# mirrors the host; src/ always exists (it holds harness + plugins), so the mount
+# never has to auto-create a missing host dir. src/papers/ is the input drop, kept
+# present via a .gitkeep; src/results/ is created on the fly and never tracked.
+input_examples/
+src/papers/*
+!src/papers/.gitkeep
+src/results/
 .runtime/
 .claude/
 

@@ -1,0 +1,36 @@
+{
+  "name": "academia-perks-openai",
+  "version": "0.1.0",
+  "description": "Academic publishing workflows for venue matching and LaTeX conversion.",
+  "author": {
+    "name": "Hugo Fernandes Silva"
+  },
+  "license": "MIT",
+  "keywords": [
+    "academia",
+    "publishing",
+    "venues",
+    "call-for-papers",
+    "research"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Academia Perks OpenAI",
+    "shortDescription": "Match venues and convert papers to LaTeX",
+    "longDescription": "Use Academia Perks to find fit-ranked publication venues and convert papers into venue-compliant LaTeX submissions.",
+    "developerName": "Hugo Fernandes Silva",
+    "category": "Education & Research",
+    "capabilities": [
+      "Interactive",
+      "Read",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Find publication venues for this paper.",
+      "Where can I submit my paper?",
+      "Match venues for papers in this folder, then convert them.",
+      "Convert this paper using a venue or local LaTeX template."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

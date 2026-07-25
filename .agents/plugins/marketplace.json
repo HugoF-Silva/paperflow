@@ -1,0 +1,20 @@
+{
+  "name": "paperflow",
+  "interface": {
+    "displayName": "Academia Perks"
+  },
+  "plugins": [
+    {
+      "name": "academia-perks-openai",
+      "source": {
+        "source": "local",
+        "path": "./src/plugins/academia-perks-openai"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Education & Research"
+    }
+  ]
+}

@@ -1,28 +1,33 @@
 [project]
 name = "academia-perks-harness"
 version = "0.1.0"
-description = "Dev harness + bundled program for the academia-perks venue-matcher plugin."
+description = "Dev harness + bundled programs for academia-perks venue matching and conversion."
 readme = "README.md"
 requires-python = ">=3.11"
 license = { text = "MIT" }
 dependencies = [
-    "claude-agent-sdk>=0.2.105",
-    "python-docx>=1.2.0",
-    "psutil>=7.2.2",
+    "claude-agent-sdk==0.2.105",
+    "openai==2.40.0",
+    "openai-agents==0.17.5",
+    "python-docx==1.2.0",
+    "psutil==7.2.2",
+    "pypandoc-binary==1.17",
+    "Pillow==12.0.0",
+    "CairoSVG==2.8.2",
 ]
 
 [project.optional-dependencies]
-dev = ["pytest>=8.0"]
+dev = ["pytest>=8.0", "PyYAML>=6.0"]
 
 [build-system]
 requires = ["setuptools>=64"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools.packages.find]
-where = ["."]
+where = ["src"]
 include = ["harness*"]
 namespaces = true
 
 [tool.pytest.ini_options]
-pythonpath = [".", "skills/venue-matcher/scripts/venue_matcher"]
+pythonpath = ["src", "src/plugins/academia-perks-claude/skills/venue-matcher/scripts/venue_matcher"]
 testpaths = ["tests"]

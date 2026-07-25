@@ -1,0 +1,22 @@
+{
+  "$schema": "https://anthropic.com/claude-code/marketplace.schema.json",
+  "name": "paperflow",
+  "owner": {
+    "name": "Hugo Fernandes Silva"
+  },
+  "description": "Academia Perks — plugins that automate manual parts of the academic publishing workflow.",
+  "plugins": [
+    {
+      "name": "academia-perks-openai",
+      "source": "./src/plugins/academia-perks-openai",
+      "displayName": "Academia Perks",
+      "description": "Find fit-ranked publication venues for a paper — conferences, journals, magazines, tracks, and workshops, split into open-now and opening-soon.",
+      "author": {
+        "name": "Hugo Fernandes Silva"
+      },
+      "license": "MIT",
+      "category": "Education & Research",
+      "keywords": ["academia", "publishing", "venues", "call-for-papers", "research"]
+    }
+  ]
+}

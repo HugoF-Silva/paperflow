@@ -1,0 +1,21 @@
+services:
+  matcher-or-converter:
+    platform: linux/amd64
+    build:
+      context: ..
+      dockerfile: ops/Dockerfile
+    entrypoint:
+      - python
+      - -m
+      - harness.cli
+      - --input-dir=/app/src/papers
+      - --soon-days=31
+    volumes:
+      - ../src:/app/src
+      - ./.env:/app/ops/.env:ro
+      - ./.paperflow.local.toml:/app/ops/.paperflow.local.toml:ro
+    env_file:
+      - .env
+    environment:
+      MAX_RALPH: ${MAX_RALPH:-4}
+      MAX_PARALLEL: ${MAX_PARALLEL:-auto}

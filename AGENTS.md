@@ -54,7 +54,8 @@ Skip these guidelines for simple, obvious fixes - don't over-engineer
 - Reuse if possible, but if not: create services which won't deprive you from your job and delete the former.
 - Relentleslly verify documentation and issues available on the internet about any issue you may stumble upon.
 
-### 10. The most important constraint:
+### 10. The most important constraint: YAGNI-driven code, always
+- YAGNI!
 - Do NOT add code helplessly.
 - The less, the better.
 - If you are not sure if you should include or not, DO NOT INCLUDE.
