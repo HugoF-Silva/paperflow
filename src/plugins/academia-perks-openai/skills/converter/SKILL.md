@@ -1,26 +1,53 @@
 ---
 name: converter
-description: Use when converting a paper to LaTeX with a venue template, either after venue matching or from an explicit venue or template conversion request.
+description: >- 
+ Use when converting a paper to LaTeX with a venue template, either 
+ after venue matching or from an explicit venue or template conversion request.
+ If not provided an input directory, it will be the session's current working 
+ directory; results directory will be always a subdir inside the reading agent's 
+ current working directory no matter whether input directory path were provided 
+ or not. Current 2026-07 Language Models based web products (e.g. claude.ai, chatgpt.com) 
+ can't keep this skill execution alive until completion, a user's machine (or at least 
+ run it with an LLM based app) is recommended.
 ---
 
 # Converter
 
 Act as the outer agent. Run the bundled converter, which assigns one Ralph-loop
 inner agent per paper and runs those agents sequentially or in parallel. Do not
-perform the conversion yourself.
+perform the conversion yourself. Avoid programmer jargons regarding command line 
+programs or explicit technical details, but talking about the system as program 
+of agents which parallelize paper layout conversion to follow a venue's LaTeX template.
 
-**Network Egress Allowlist pre-condition.** If the environment where your 
-command lines are executed can't make outbound requests to whatever is the OpenAI 
-agent's SDK URL, the converter command won't proceed properly — if that's the case, 
-warn the user to add to the allowlist whatever is the API URL the agent SDK uses in 
-this converter program's depedencies; currently it is api.openai.com.
+## Please be advised
+- Input files: Even though more file types may be inside the input directory, only 
+  `.docx` will be read by the converter. If the input directory has papers which 
+  aren't .docx, tell the user the venue-matcher ignores other file types. The `.docx` 
+  files must be located directly inside the input directory, not in a nested dir 
+  within it. If you didn't find any direct children papers inside the input 
+  directory, refuse to continue and tell the user: until they provide an input 
+  directory or start a session within a working directory (cwd) in which contains 
+  papers, you will not proceed!
+- Output files: Each converter agent's assigned paper conversion workspace is located 
+  inside the results directory, which — when a value is not set for `--results-dir` — 
+  by default is a `results` directly inside the current working directory; after a 
+  venue-matcher batch execution be the immediate causal predecessor of the decision 
+  to come read — and use — the converter, you set `--results-dir` as `{cwd}/results` 
+  due to have no other choice after directory had been already automatically created 
+  by the matcher; if there was no multiple results for venue-matcher but a single one, 
+  there's no reason to set `--results-dir` since the program was not designed to run 
+  with a value set for it when there's a single preferred venue to be used — whether 
+  that preferred venue is the top-1 from the singlemost ranking.md which might had 
+  been generated, or a pragraph emphasizing the chosen venue alongside its template URL, 
+  or an specific user provided venue's template path.
 
 ## Procedure
 
-1. Find the input directory. Use a provided directory when available; otherwise
-   search accessible directories for the uploaded `.docx` paper or papers and
-   use their containing directory. Confirm the files exist. Do not invent a
-   default path.
+1. Assert you have acess to the input directory. If you were given one, use it. 
+   Otherwise assume your current working directory is the input directory, look 
+   for `.docx` paper(s) inside it. No directory besides the one given or — in 
+   case no input directory were provided — besides your own should be set as input
+   directory.
 
 2. Select exactly one optional source flag. Use these value shapes:
 
@@ -31,8 +58,7 @@ this converter program's depedencies; currently it is api.openai.com.
    | `--chosen-venue` | `<paragraph>` linking the venue to its template URL or evidence |
    | `--template-path` | `<path>` |
 
-   **For a venue-matcher handoff,** 
-   count only **completed per-paper matcher-agent
+   **For a venue-matcher handoff,** count only **completed per-paper matcher-agent 
    results**: one terminal inner-agent response returned per paper to the batch
    runner. Multiple Ralph passes for one paper still count as one result. Never
    infer this count from papers, runs, workspaces, or ranking files.
@@ -40,17 +66,15 @@ this converter program's depedencies; currently it is api.openai.com.
    - More than one completed result: run once immediately with `--results-dir`
      as the only optional source. Do not gate this choice on ranking files.
    - Exactly one completed result: locate its workspace from the reported paper
-     stem. If its `ranking.md` exists, read it, show its venues in descending
-     order, and explain that converter will attempt conversion with that venue's
-     LaTeX template. Then — ideally through a tool/mechanism you can use to ask 
-     user questions but regardless whether you are aware of any — ask which venue 
-     the user wants. 
-     The handoff is incomplete until that tool is called; a plain-text question
-     is not a substitute.
-     After selection, use `--chosen-venue` with a paragraph linking
-     the selected venue to its template URL or evidence. If that exactly one 
-     completed result has no `ranking.md`, report that outcome and do not 
-     launch conversion.
+     stem.If that exactly one completed result has no `ranking.md`, report that 
+     outcome and do not launch conversion. But If its `ranking.md` exists, read it, 
+     then — as you tell to the user the converter will attempt conversion with that 
+     venue's LaTeX template — ask which venue the user wants out of the ranked 
+     venues you explicit highlight in descending order — ideally do it through a 
+     tool/mechanism you can use to ask user questions but regardless whether you 
+     are aware of any. The handoff is incomplete until the user let you proceed 
+     by selecting a venue. After selection, use `--chosen-venue` with a paragraph 
+     linking the selected venue to its template URL or evidence.
    - Zero completed results: report the no-result outcome and do not launch
      conversion, even when stale or early-created ranking files exist.
 
@@ -91,10 +115,12 @@ this converter program's depedencies; currently it is api.openai.com.
      (--results-dir <path> | --chosen-venue <paragraph> | --template-path <path>)
    ```
 
-6. Report the outcome and relevant file paths (or even the files itself if you can) 
-   in the user's preferred language. If the user did not state one, use the language 
-   already used with them. If you can provide the file itself besides the file path 
-   to the user, provide it. if it ends up with more than one completed/blocked 
-   converter-agent result, do not propagate requests/appeals to user— neither 
-   through the tool you have access to ask user questions nor other mechanism — 
-   instead, simply report all completed outcomes.
+6. Report the outcome and relevant file paths. Use the user's preferred language. 
+   If the user did not state one, use the language already used by them. If you 
+   can provide the file itself besides the file path to the user, provide it. if 
+   it ends up with more than one completed or blocked converter-agent result, the 
+   do not act on behalf of any of the inner agents's by asking the user whatever 
+   inner agents's may had asked to the user, neither propagate natural language 
+   requests in third person — no matter if you intended to do it through the tool 
+   you have access to ask user questions or through other mechanism — instead, 
+   simply report all outcomes writing about all of them in third person.
