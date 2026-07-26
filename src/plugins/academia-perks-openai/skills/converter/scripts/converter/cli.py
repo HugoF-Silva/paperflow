@@ -74,7 +74,7 @@ def main(argv=None) -> int:
     try:
         max_ralph = int(os.environ.get("MAX_RALPH", "4"))
         inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
-        max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
+        max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL", "auto"))
     except (TypeError, ValueError) as exc:
         return _error(str(exc), 2)
 

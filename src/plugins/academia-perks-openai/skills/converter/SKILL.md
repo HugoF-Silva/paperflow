@@ -20,6 +20,10 @@ programs or explicit technical details, but talking about the system as program
 of agents which parallelize paper layout conversion to follow a venue's LaTeX template.
 
 ## Please be advised
+- Parallelism by default: `MAX_PARALLEL=auto` attempts to conservatively estimate
+  how many parallel processes the host machine can take. 1 paper : 1 process.
+  The converter program executes an agent per paper. `auto` is the default value. 
+  Keep this way unless the user explicitly tells a different pool size.
 - Input files: Even though more file types may be inside the input directory, only 
   `.docx` will be read by the converter. If the input directory has papers which 
   aren't .docx, tell the user the venue-matcher ignores other file types. The `.docx` 
