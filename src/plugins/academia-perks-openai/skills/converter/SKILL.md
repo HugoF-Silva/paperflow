@@ -95,6 +95,10 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
      or `--template-path` for one supplied local template. If neither chosen-venue + link 
      nor template or both chosen venue + link and template are supplied, ask the user to 
      choose exactly one source.
+   - If there are more than one `.docx` in the input directory: refuse to proceed with the 
+     script, otherwise, by running it standalone, it will run the converter program for the
+     first `.docx` inside the input directory doesn't matter whether it is the targeted paper
+     file or not, which risks converting the wrong `.docx` to the supplied venue/template. 
 
 4. Before running the command, resolve `OPENAI_API_KEY` from the provided key and
    `CONVERTER_MODEL` from the same provider/runtime family and model identity as
