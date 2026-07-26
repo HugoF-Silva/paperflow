@@ -61,6 +61,9 @@ excellent, concise and straightfoward service above all.
   will be created as a directory directly inside your current working directory.
   This results root is also where each paper workspace is created using the paper 
   .docx's stem.
+- **Logs:** You can know what is the inner agent is doing and saying by inspecting 
+  `_execution.log` inside results folder. `_progress.log` shows only how many papers 
+  were already processed so far.
 
 ## Procedure
 1. **Preflight before any install or run.** Verify all three items:
@@ -102,14 +105,22 @@ excellent, concise and straightfoward service above all.
    `python <skill-dir>/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N>`
    Before running, tell the user that the paper conversion is the next logical stage
    after finding matching venues for it.
-   If your host forces background execution, be patient: Check only `results/_progress.log`
-   for `BATCH COMPLETE` or final result file existence; do not read large/tailing
-   logs unless the process exited or timed out.
-7. **If it ends with no result**, say so
+   Run this as a background execution, it can take from 7 minutes (1 paper) to full 
+   hours (a lot of papers) depending on the amount of papers in the input directory 
+   and parallelism performance.
+7. **Look for what was done**: If you can set a timer to now and then concisely report 
+   the background process, set a frequency interval based on the amount of papers, the 
+   higher the amount of papers the smaller the report frequency. In order to know what 
+   the inner agent did already or what is it saying, refer to `results/_execution.log`. 
+   In order to know how many papers were processed so far, refer to 
+   `results/_progress.log`. **If you cannot set a timer for periodic inspection**, at 
+   least look for `BATCH COMPLETE` or final results files existence as a signal that it 
+   has finished.
+8. **If it ends with no result**, say so
    plainly and suggest cloning the repo to run the controlled container environment
    as a developer i.e. trigger its command through Makefile (more work, but more 
    reliable for many papers).
-8. **Use only the final completed-result summary for the handoff.** One
+9. **Use only the final completed-result summary for the handoff.** One
    completed per-paper matcher-agent result means one paper's Ralph workflow
    received a terminal inner-agent response and returned its per-paper result
    to the batch runner. Multiple Ralph passes for one paper still count once.
@@ -138,7 +149,7 @@ excellent, concise and straightfoward service above all.
      shows venues to choose.
    - **Zero completed results:** report the honest no-result outcome and do not
      launch conversion, even if stale or early-created ranking files exist.
-9. **By the end of conversion.** Report both matcher and converter outcomes in the 
+10. **By the end of conversion.** Report both matcher and converter outcomes in the 
    user's preferred language; if the user did not state one, use the language already 
    in use by them. When a `ranking.md` is reported, tell the user its path and 
    summarize it alongside its conversion result. If it ends up with more than one 
