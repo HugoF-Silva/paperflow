@@ -55,7 +55,13 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
    case no input directory were provided — besides your own should be set as input
    directory.
 
-2. Select exactly one optional source flag. Use these value shapes:
+2. Confirm a provided OpenAI API key value exists in the task prompt or
+   from the user. Do not search it broadely on the user's machine; they must 
+   explicitly point to it or you will not proceed with the script. If it is missing, 
+   ask the user — ideally through a tool/mechanism you can use to ask user questions 
+   but regardless whether you are aware of any.
+   
+3. Select exactly one optional source flag. Use these value shapes:
 
    | Flag | Value |
    | --- | --- |
@@ -90,7 +96,7 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
      nor template or both chosen venue + link and template are supplied, ask the user to 
      choose exactly one source.
 
-3. Before running the command, resolve `OPENAI_API_KEY` from the provided key and
+4. Before running the command, resolve `OPENAI_API_KEY` from the provided key and
    `CONVERTER_MODEL` from the same provider/runtime family and model identity as
    you, the agent reading this skill. But if you are neither an OpenAI 
    language model nor a model supported by the inner agent SDK's language model 
@@ -98,7 +104,7 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
    identity dynamically; never hardcode or print either value, and keep both 
    values unexported until the final launch.
 
-4. Install dependencies idempotently with the directory containing this file
+5. Install dependencies idempotently with the directory containing this file
    as `<skill-dir>`:
 
    ```bash
@@ -108,7 +114,7 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
    Verify that `tectonic` is on `PATH`. If absent, install an official prebuilt
    binary and verify it before continuing; do not use an unverified fallback.
 
-5. Run exactly one converter command and wait for it to finish. Use `exec env`
+6. Run exactly one converter command and wait for it to finish. Use `exec env`
    in the same shell call so the credential-bearing shell is replaced before
    inner tools can run. Replace the parenthesized group with the one selected
    optional source:
@@ -122,13 +128,13 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
      (--results-dir <path> | --chosen-venue <paragraph> | --template-path <path>)
    ```
 
-6. If you can set a timer for periodic results inspection, do so and concisely report 
+7. If you can set a timer for periodic results inspection, do so and concisely report 
    the background process now and then. The higher the amount of papers the smaller 
    should be the report frequency. If there's no timer mechanism available, skip to 
    the procedure's step 7 when it finishes. `_execution.log` may provide context to 
    inner agents's messages.
 
-7. Report the outcome and relevant file paths. Use the user's preferred language. 
+8. Report the outcome and relevant file paths. Use the user's preferred language. 
    If the user did not state one, use the language already used by them. If you 
    can provide the file itself besides the file path to the user, provide it. if 
    it ends up with more than one completed or blocked converter-agent result, the 

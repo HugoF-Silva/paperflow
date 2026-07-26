@@ -69,7 +69,7 @@ excellent, concise and straightfoward service above all.
 1. **Preflight before any install or run.** Verify all three items:
    - Opening tolerance: confirm how many days the user tolerates until a venue
      opens; this is the `--soon-days` value.
-   - API key: confirm a provided API key value exists in the task prompt or
+   - API key: confirm a provided OpenAI API key value exists in the task prompt or
      from the user. The original key name does not matter.
    - Model: choose a model through `VENUE_MATCHER_MODEL`; it must be the same
      provider/runtime family as you, the agent reading this skill.
@@ -84,7 +84,7 @@ excellent, concise and straightfoward service above all.
    `.docx` paper(s) inside it. No directory besides the one given or besides
    your own (in case no input directory were provided) should be set as input
    directory.
-4. **Set the API and model environment variables.** Set `OPENAI_API_KEY` to the
+3. **Set the API and model environment variables.** Set `OPENAI_API_KEY` to the
    provided API key value before running the script.
    If you are an OpenAI language model, set `VENUE_MATCHER_MODEL` to the model 
    identity that matches you, the agent reading this skill. The goal is for the 
@@ -98,9 +98,9 @@ excellent, concise and straightfoward service above all.
    `export VENUE_MATCHER_MODEL='<reader-model>'`
    If your shell tool does not preserve exported variables across calls, include
    the exports in the same shell call that starts the matcher.
-5. **Install deps once** Use the directory containing this `SKILL.md` as `<skill-dir>`:
+4. **Install deps once** Use the directory containing this `SKILL.md` as `<skill-dir>`:
    `pip install -q -r <skill-dir>/scripts/requirements.txt`
-6. **Run it once and wait patiently.** You may set only `--input-dir` and
+5. **Run it once and wait patiently.** You may set only `--input-dir` and
    `--soon-days`:
    `python <skill-dir>/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N>`
    Before running, tell the user that the paper conversion is the next logical stage
@@ -108,7 +108,7 @@ excellent, concise and straightfoward service above all.
    Run this as a background execution, it can take from 7 minutes (1 paper) to full 
    hours (a lot of papers) depending on the amount of papers in the input directory 
    and parallelism performance.
-7. **Look for what was done**: If you can set a timer to now and then concisely report 
+6. **Look for what was done**: If you can set a timer to now and then concisely report 
    the background process, set a frequency interval based on the amount of papers, the 
    higher the amount of papers the smaller the report frequency. In order to know what 
    the inner agent did already or what is it saying, refer to `results/_execution.log`. 
@@ -116,11 +116,11 @@ excellent, concise and straightfoward service above all.
    `results/_progress.log`. **If you cannot set a timer for periodic inspection**, at 
    least look for `BATCH COMPLETE` or final results files existence as a signal that it 
    has finished.
-8. **If it ends with no result**, say so
+7. **If it ends with no result**, say so
    plainly and suggest cloning the repo to run the controlled container environment
    as a developer i.e. trigger its command through Makefile (more work, but more 
    reliable for many papers).
-9. **Use only the final completed-result summary for the handoff.** One
+8. **Use only the final completed-result summary for the handoff.** One
    completed per-paper matcher-agent result means one paper's Ralph workflow
    received a terminal inner-agent response and returned its per-paper result
    to the batch runner. Multiple Ralph passes for one paper still count once.
@@ -149,7 +149,7 @@ excellent, concise and straightfoward service above all.
      shows venues to choose.
    - **Zero completed results:** report the honest no-result outcome and do not
      launch conversion, even if stale or early-created ranking files exist.
-10. **By the end of conversion.** Report both matcher and converter outcomes in the 
+9. **By the end of conversion.** Report both matcher and converter outcomes in the 
    user's preferred language; if the user did not state one, use the language already 
    in use by them. When a `ranking.md` is reported, tell the user its path and 
    summarize it alongside its conversion result. If it ends up with more than one 
