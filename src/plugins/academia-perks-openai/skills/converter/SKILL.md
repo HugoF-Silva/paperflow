@@ -40,6 +40,8 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
   that preferred venue is the top-1 from the singlemost ranking.md which might had 
   been generated, or a pragraph emphasizing the chosen venue alongside its template URL, 
   or an specific user provided venue's template path.
+- Logs: Whatever the inner agent is saying or doing is logged in `_execution.log` inside
+  results directory. `_progress.log` shows only how many papers were already processed so far.
 
 ## Procedure
 
@@ -115,7 +117,13 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
      (--results-dir <path> | --chosen-venue <paragraph> | --template-path <path>)
    ```
 
-6. Report the outcome and relevant file paths. Use the user's preferred language. 
+6. If you can set a timer for periodic results inspection, do so and concisely report 
+   the background process now and then. The higher the amount of papers the smaller 
+   should be the report frequency. If there's no timer mechanism available, skip to 
+   the procedure's step 7 when it finishes. `_exection.log` may provide context to inner 
+   agents's messages.
+
+7. Report the outcome and relevant file paths. Use the user's preferred language. 
    If the user did not state one, use the language already used by them. If you 
    can provide the file itself besides the file path to the user, provide it. if 
    it ends up with more than one completed or blocked converter-agent result, the 
@@ -124,3 +132,4 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
    requests in third person — no matter if you intended to do it through the tool 
    you have access to ask user questions or through other mechanism — instead, 
    simply report all outcomes writing about all of them in third person.
+ 
