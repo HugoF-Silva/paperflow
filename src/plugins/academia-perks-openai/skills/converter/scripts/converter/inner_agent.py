@@ -11,6 +11,9 @@ from datetime import datetime, timezone
 from tools import build_tools
 
 
+EXECUTION_LOG_ENV = "PAPERFLOW_EXECUTION_LOG"
+
+
 @dataclass(frozen=True)
 class PassResult:
     session_id: str | None
@@ -21,7 +24,7 @@ def log_status(message: str, body: str | None = None) -> None:
     stamp = datetime.now(tz=timezone.utc).astimezone().isoformat(timespec="seconds")
     line = f"[converter] {stamp} {message}"
     print(line, flush=True)
-    path = os.environ.get("PAPERFLOW_EXECUTION_LOG")
+    path = os.environ.get(EXECUTION_LOG_ENV)
     if not path:
         return
     try:

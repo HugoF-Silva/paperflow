@@ -8,12 +8,13 @@ import os
 import pathlib
 import sys
 
-from logging_utils import log_status
+from logging_utils import EXECUTION_LOG_ENV, log_status
 import runner
 
 MODEL_ENV = "VENUE_MATCHER_MODEL"
 REQUIRED_ENV = ["OPENAI_API_KEY", MODEL_ENV]
 DEFAULT_OUTPUT_DIR = pathlib.Path("results")
+EXECUTION_LOG_NAME = "_execution.log"
 
 
 def missing_env_vars(env, required) -> list[str]:
@@ -28,19 +29,27 @@ def parse_args(argv=None) -> argparse.Namespace:
 
 
 def main(argv=None) -> int:
+    args = parse_args(argv)
+    out_dir = pathlib.Path(os.environ.get("OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
+    execution_log = (out_dir / EXECUTION_LOG_NAME).resolve()
+    execution_log.parent.mkdir(parents=True, exist_ok=True)
+    if os.environ.get(EXECUTION_LOG_ENV) != str(execution_log):
+        execution_log.write_text("", encoding="utf-8")
+    else:
+        execution_log.touch(exist_ok=True)
+    os.environ[EXECUTION_LOG_ENV] = str(execution_log)
+
     missing = missing_env_vars(os.environ, REQUIRED_ENV)
     if missing:
         print(f"The following environment variables are not set: {', '.join(missing)}",
               file=sys.stderr, flush=True)
         return 2
 
-    args = parse_args(argv)
     papers = sorted(args.input_dir.glob("*.docx"))
     if not papers:
         print(f"No .docx papers found in {args.input_dir}", file=sys.stderr, flush=True)
         return 1
 
-    out_dir = pathlib.Path(os.environ.get("OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
     max_ralph = int(os.environ.get("MAX_RALPH", "4"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
