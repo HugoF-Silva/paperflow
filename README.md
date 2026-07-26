@@ -71,7 +71,8 @@ conversion before running the corresponding bundled program.
 Each harness run resets `./src/results/_execution.log`
 before the outer agent starts; that file mirrors the timestamped harness, tool,
 CLI, inner-agent, and batch status stream, plus the final outer-agent response,
-that also appears in container logs.
+that also appears in container logs. Standalone OpenAI matching resets that same
+log at the configured output directory; standalone conversion appends to it.
 The matcher consumes only `.docx` files from the selected input directory and
 ignores other file types.
 

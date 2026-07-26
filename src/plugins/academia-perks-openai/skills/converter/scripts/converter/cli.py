@@ -6,6 +6,7 @@ import os
 import pathlib
 import sys
 
+from inner_agent import EXECUTION_LOG_ENV
 import runner
 from tools import _set_process_nondumpable
 
@@ -13,6 +14,7 @@ from tools import _set_process_nondumpable
 MODEL_ENV = "CONVERTER_MODEL"
 REQUIRED_ENV = ["OPENAI_API_KEY", MODEL_ENV]
 DEFAULT_OUTPUT_DIR = pathlib.Path("results")
+EXECUTION_LOG_NAME = "_execution.log"
 
 
 def missing_env_vars(env, required) -> list[str]:
@@ -65,6 +67,10 @@ def main(argv=None) -> int:
         invocation_cwd
         / pathlib.Path(os.environ.get("OUTPUT_DIR", str(DEFAULT_OUTPUT_DIR)))
     ).resolve()
+    execution_log = output_dir / EXECUTION_LOG_NAME
+    execution_log.parent.mkdir(parents=True, exist_ok=True)
+    execution_log.touch(exist_ok=True)
+    os.environ[EXECUTION_LOG_ENV] = str(execution_log)
     try:
         max_ralph = int(os.environ.get("MAX_RALPH", "4"))
         inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))

@@ -6,6 +6,7 @@ from __future__ import annotations
 
 import argparse
 import asyncio
+import importlib.util
 import os
 import pathlib
 import sys
@@ -14,7 +15,6 @@ import tomllib
 from harness import outer_agent
 
 DEFAULT_OUTPUT_DIR = pathlib.Path("/app/src/results")
-EXECUTION_LOG_NAME = "_execution.log"
 TODO_CHOICES = outer_agent.TODO_CHOICES
 
 
@@ -76,12 +76,32 @@ def _configured_output_dir(env=os.environ) -> pathlib.Path | None:
     return DEFAULT_OUTPUT_DIR if DEFAULT_OUTPUT_DIR.parent.exists() else None
 
 
+def _execution_log_name(repo_root: pathlib.Path) -> str:
+    skill_root = repo_root / "plugins" / "academia-perks-openai" / "skills"
+    for skill_name, script_dir in (("venue-matcher", "venue_matcher"), ("converter", "converter")):
+        source = skill_root / skill_name / "scripts" / script_dir / "cli.py"
+        if not source.is_file():
+            continue
+        spec = importlib.util.spec_from_file_location(f"paperflow_{script_dir}_cli", source)
+        if spec is None or spec.loader is None:
+            continue
+        module = importlib.util.module_from_spec(spec)
+        sys.path.insert(0, str(source.parent))
+        try:
+            spec.loader.exec_module(module)
+        finally:
+            sys.path.pop(0)
+        if name := getattr(module, "EXECUTION_LOG_NAME", None):
+            return name
+    raise RuntimeError("OpenAI plugin execution log filename is unavailable")
+
+
 def initialize_harness_logs(ns: argparse.Namespace, env=os.environ) -> pathlib.Path | None:
     out_dir = _configured_output_dir(env)
     if out_dir is None:
         return None
     out_dir.mkdir(parents=True, exist_ok=True)
-    execution_log = out_dir / EXECUTION_LOG_NAME
+    execution_log = (out_dir / _execution_log_name(ns.repo_root)).resolve()
     execution_log.write_text("", encoding="utf-8")
     env[outer_agent.EXECUTION_LOG_ENV] = str(execution_log)
     return execution_log
