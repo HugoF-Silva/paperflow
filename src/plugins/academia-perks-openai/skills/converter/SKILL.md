@@ -31,7 +31,8 @@ this converter program's depedencies; currently it is api.openai.com.
    | `--chosen-venue` | `<paragraph>` linking the venue to its template URL or evidence |
    | `--template-path` | `<path>` |
 
-   For a matcher handoff, count only **completed per-paper matcher-agent
+   **For a venue-matcher handoff,** 
+   count only **completed per-paper matcher-agent
    results**: one terminal inner-agent response returned per paper to the batch
    runner. Multiple Ralph passes for one paper still count as one result. Never
    infer this count from papers, runs, workspaces, or ranking files.
@@ -52,9 +53,11 @@ this converter program's depedencies; currently it is api.openai.com.
      launch conversion.
    - Zero completed results: report the no-result outcome and do not launch
      conversion, even when stale or early-created ranking files exist.
-   - For a standalone request, use `--chosen-venue` for one explicit venue and
-     template paragraph, or `--template-path` for one supplied local template.
-     If neither or both are supplied, ask the user to choose exactly one source.
+
+   **For a standalone request (i.e. not from a venue-matcher handoff)**, 
+   - use `--chosen-venue` for one explicit venue + template paragraph, or 
+     `--template-path` for one supplied local template. If neither or both are 
+     supplied, ask the user to choose exactly one source.
 
 3. Before running the command, resolve `OPENAI_API_KEY` from the provided key and
    `CONVERTER_MODEL` from the same provider/runtime family and model identity as
