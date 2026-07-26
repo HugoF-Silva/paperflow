@@ -9,6 +9,12 @@ Act as the outer agent. Run the bundled converter, which assigns one Ralph-loop
 inner agent per paper and runs those agents sequentially or in parallel. Do not
 perform the conversion yourself.
 
+**Network Egress Allowlist pre-condition.** If the environment where your 
+command lines are executed can't make outbound requests to whatever is the OpenAI 
+agent's SDK URL, the converter command won't proceed properly — if that's the case, 
+warn the user to add to the allowlist whatever is the API URL the agent SDK uses in 
+this converter program's depedencies; currently it is api.openai.com.
+
 ## Procedure
 
 1. Find the input directory. Use a provided directory when available; otherwise
@@ -35,8 +41,9 @@ perform the conversion yourself.
    - Exactly one completed result: locate its workspace from the reported paper
      stem. If its `ranking.md` exists, read it, show its venues in descending
      order, and explain that converter will attempt conversion with that venue's
-     LaTeX template. Then call `request_user_input` to ask which venue the user
-     wants.
+     LaTeX template. Then — ideally through a tool/mechanism you can use to ask 
+     user questions but regardless whether you are aware of any — ask which venue 
+     the user wants. 
      The handoff is incomplete until that tool is called; a plain-text question
      is not a substitute.
      After selection, use `--chosen-venue` with a paragraph linking
@@ -51,9 +58,11 @@ perform the conversion yourself.
 
 3. Before running the command, resolve `OPENAI_API_KEY` from the provided key and
    `CONVERTER_MODEL` from the same provider/runtime family and model identity as
-   you, the agent reading this skill. Resolve that identity dynamically; never
-   hardcode or print either value, and keep both values unexported until the
-   final launch.
+   you, the agent reading this skill. But if you are neither an OpenAI 
+   language model nor a model supported by the inner agent SDK's language model 
+   provider API, resort to set `'gpt-5.4-mini'` as `CONVERTER_MODEL`. Resolve that 
+   identity dynamically; never hardcode or print either value, and keep both 
+   values unexported until the final launch.
 
 4. Install dependencies idempotently with the directory containing this file
    as `<skill-dir>`:
@@ -83,6 +92,6 @@ perform the conversion yourself.
    in the user's preferred language. If the user did not state one, use the language 
    already used with them. If you can provide the file itself besides the file path 
    to the user, provide it. if it ends up with more than one completed/blocked 
-   converter-agent result, do not propagate requests/appeals to user neither through 
-   `request_user_input` nor other mechanism; instead, simply report all completed 
-   outcomes.
+   converter-agent result, do not propagate requests/appeals to user— neither 
+   through the tool you have access to ask user questions nor other mechanism — 
+   instead, simply report all completed outcomes.
