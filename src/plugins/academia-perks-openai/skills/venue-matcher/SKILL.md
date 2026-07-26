@@ -48,12 +48,14 @@ excellent, concise and straightfoward service above all.
   searches in the selected scope's expected language, but language never expands
   or determines the target scope.
 - **Input files:** If the user did not provide
-  an specific input directory for you, you must assume your working directory (cwd)
+  a specific input directory for you, you must assume your working directory (cwd)
   is the input directory. Even though more type of files may happen to be inside 
   the input directory, only `.docx` files will be read by the program. If the user
   provides input directory with paper files which are an type other than .docx, 
   tell the user the venue-matcher ignores other file types. The `.docx` files must 
-  be located directly inside the input directory, not in a subdirectory within it. 
+  be located directly inside the input directory, not in a subdirectory within it.
+  Do not make broader searches for papers in other subdirectories: focus on whether 
+  there are .docx papers directly as children of the input directory or not.
   If you didn't find any papers directly in the input directory, refuse to continue 
   and tell the user that until they provide an input directory or start a session 
   within a working directory (cwd) in which contains papers, **you will not proceed!**
