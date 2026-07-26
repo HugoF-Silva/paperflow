@@ -23,7 +23,7 @@ def parse_args(argv=None) -> argparse.Namespace:
     p.add_argument("--input-dir", "--input_dir", dest="input_dir", type=pathlib.Path)
     p.add_argument("--soon-days", type=int, default=31)
     p.add_argument("--max-ralph", type=int, default=int(os.environ.get("MAX_RALPH", "4")))
-    p.add_argument("--max-parallel", default=os.environ.get("MAX_PARALLEL", "1"))          # int-as-str or "auto"
+    p.add_argument("--max-parallel", default=os.environ.get("MAX_PARALLEL", "auto"))          # int-as-str or "auto"
     p.add_argument("--inner-max-turns", type=int, default=int(os.environ.get("INNER_MAX_TURNS", "50")))
     p.add_argument("--extra-skill-paths", action="append", default=[], type=pathlib.Path)
     p.add_argument("--api", choices=outer_agent.API_CHOICES, required=True)
