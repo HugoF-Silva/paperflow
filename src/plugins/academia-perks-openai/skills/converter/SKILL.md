@@ -120,8 +120,8 @@ of agents which parallelize paper layout conversion to follow a venue's LaTeX te
 6. If you can set a timer for periodic results inspection, do so and concisely report 
    the background process now and then. The higher the amount of papers the smaller 
    should be the report frequency. If there's no timer mechanism available, skip to 
-   the procedure's step 7 when it finishes. `_execution.log` may provide context to inner 
-   agents's messages.
+   the procedure's step 7 when it finishes. `_execution.log` may provide context to 
+   inner agents's messages.
 
 7. Report the outcome and relevant file paths. Use the user's preferred language. 
    If the user did not state one, use the language already used by them. If you 
