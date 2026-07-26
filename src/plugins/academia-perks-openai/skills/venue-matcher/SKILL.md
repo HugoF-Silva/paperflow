@@ -105,11 +105,17 @@ excellent, concise and straightfoward service above all.
    `python <skill-dir>/scripts/venue_matcher/cli.py --input-dir <dir> --soon-days <N>`
    Before running, tell the user that the paper conversion is the next logical stage
    after finding matching venues for it.
-   Run this as a background execution, it can take from 7 minutes (1 paper) to full hours (a lot of papers) depending on the amount of papers in the input directory and parallelism performance.
-7. **Look for what was done**: If you can set a timer to now and then concisely report the 
-   background process, set a frequency interval based on the amount of papers, the higher the amount of papers the smaller the report frequency, In order to know what the inner agent did already or what is it saying, refer to `results/_execution.log`. In order to know how many papers were processed so far, refer to `results/_progress.log`. **If you 
-   cannot set a timer for periodic inspection**, at least look for `BATCH COMPLETE` or
-   final results files existence as a signal that it has finished.
+   Run this as a background execution, it can take from 7 minutes (1 paper) to full 
+   hours (a lot of papers) depending on the amount of papers in the input directory 
+   and parallelism performance.
+7. **Look for what was done**: If you can set a timer to now and then concisely report 
+   the background process, set a frequency interval based on the amount of papers, the 
+   higher the amount of papers the smaller the report frequency. In order to know what 
+   the inner agent did already or what is it saying, refer to `results/_execution.log`. 
+   In order to know how many papers were processed so far, refer to 
+   `results/_progress.log`. **If you cannot set a timer for periodic inspection**, at 
+   least look for `BATCH COMPLETE` or final results files existence as a signal that it 
+   has finished.
 8. **If it ends with no result**, say so
    plainly and suggest cloning the repo to run the controlled container environment
    as a developer i.e. trigger its command through Makefile (more work, but more 
