@@ -1,4 +1,4 @@
-.PHONY: run-openai run-anthropic run-openai-converter down prune
+.PHONY: run run-converter down prune
 
 .paperflow.local.toml:
 	touch .paperflow.local.toml
