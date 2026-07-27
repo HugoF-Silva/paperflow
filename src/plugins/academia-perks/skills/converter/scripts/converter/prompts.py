@@ -92,10 +92,12 @@ Re-check every mandatory venue structure and compile with the compile tool befor
 claim success from plausible LaTeX text or partial compliance. A compile whose overfull field is not
 empty, or a PDF with content printed outside the text block — usually a table wider than the
 column, an oversized figure, or text that cannot break — is unfinished work: fix **what you authored** at 
-the reported lines and recompile until the only left are entries you have inspected 
-and confirmed come from the template's own files rather than from content you wrote.
-In order to confirm, you — before you treat an entry as yours — may compile the template's own sample 
-paper against the class copy in converted/ the same way you compiled main.tex.
+the reported lines and recompile until the only ones left are entries you have inspected 
+and confirmed they came from the template's own files rather than from content you wrote.
+
+The line an overfull entry names is where TeX finished the box, not where the markup that caused it lives, 
+so  usually an entry landing on things like \end{{...}} or on a line carrying no prose is often emitted 
+by the template's own class rather than by anything you wrote.
 
 Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, verifying every mandatory 
 template requirement is met and confirming that converted/main.tex exists beside a non-empty converted/main.pdf.
