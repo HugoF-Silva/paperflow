@@ -15,6 +15,18 @@ import ralph
 EST_BYTES_PER_WORKER = 800 * 1024 * 1024
 CPU_SAFETY = 0.8
 MEM_SAFETY = 0.7
+# Windows caps directory paths at 247 chars (260 MAX_PATH minus an 8.3 name)
+# without long-path support; each paper workspace dir is out_dir/<stem>.
+WORKSPACE_PATH_BUDGET = 247
+
+
+def workspaces_too_deep(out_dir: pathlib.Path, papers) -> list:
+    """Papers whose workspace dir paths certainly exceed Windows path limits."""
+    root = pathlib.Path(out_dir).resolve()
+    return [
+        paper for paper in papers
+        if len(str(root / paper.stem)) > WORKSPACE_PATH_BUDGET
+    ]
 
 
 def resolve_max_parallel(env_value: str | None) -> int | str:

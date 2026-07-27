@@ -1,6 +1,7 @@
 """Extract DOCX papers as deterministic Markdown and JPEG figures."""
 from __future__ import annotations
 
+import glob
 import io
 import pathlib
 import re
@@ -137,7 +138,7 @@ def extract_paper(docx_path: pathlib.Path, workspace: pathlib.Path) -> str:
     figure_dir.mkdir(parents=True)
     with tempfile.TemporaryDirectory(dir=figure_dir) as raw_dir:
         markdown = pypandoc.convert_file(
-            str(docx_path),
+            glob.escape(str(docx_path)),
             "markdown+tex_math_dollars",
             format="docx",
             extra_args=["--wrap=none", "--eol=lf", f"--extract-media={raw_dir}"],

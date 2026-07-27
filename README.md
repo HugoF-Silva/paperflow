@@ -206,6 +206,11 @@ results/
     └── ranking.md
 ```
 
+On Windows, both CLIs refuse to start when a paper's workspace path would
+certainly exceed Windows' path limits (260-char MAX_PATH family), naming the
+offending papers and the budget instead of failing mid-batch — move the
+results root somewhere shallower or shorten the paper filenames, then re-run.
+
 Conversion writes its per-paper workspace beneath the same results root and
 records batch progress in `_converter_progress.log`.
 

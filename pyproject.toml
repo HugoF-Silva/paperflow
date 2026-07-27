@@ -29,5 +29,5 @@ include = ["harness*"]
 namespaces = true
 
 [tool.pytest.ini_options]
-pythonpath = ["src", "src/plugins/academia-perks-claude/skills/venue-matcher/scripts/venue_matcher"]
+pythonpath = ["src"]
 testpaths = ["tests"]
