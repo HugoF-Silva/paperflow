@@ -23,30 +23,20 @@ _RASTER_SUFFIXES = {".bmp", ".gif", ".jpeg", ".jpg", ".png", ".tif", ".tiff", ".
 
 
 def _resolve_media(target: str, raw_dir: pathlib.Path) -> pathlib.Path:
-    value = unquote(target[1:-1] if target.startswith("<") else target)
-    value = re.sub(r"\\([_*.{}\[\]()#! ])", r"\1", value)
-    direct = pathlib.Path(value)
-    raw_root = raw_dir.resolve()
-    if direct.is_absolute() and not (
-        direct.is_file() and direct.resolve().is_relative_to(raw_root)
-    ):
-        raise ValueError(f"Could not resolve extracted media reference: {target}")
-    if direct.is_file() and direct.resolve().is_relative_to(raw_root):
-        return direct.resolve()
+    """Resolve one extracted-media reference against ``raw_dir``.
 
-    normalized = value.replace("\\", "/")
-    matches = []
-    for path in raw_dir.rglob("*"):
-        resolved = path.resolve()
-        if (
-            path.is_file()
-            and resolved.is_relative_to(raw_root)
-            and normalized.endswith(path.relative_to(raw_dir).as_posix())
-        ):
-            matches.append(resolved)
-    if len(matches) != 1:
+    ``--extract-media=.`` keeps pandoc's targets relative, so the workspace path
+    — which carries the paper stem, brackets, parentheses and all — never enters
+    the Markdown and never has to be parsed back out. Anything resolving outside
+    ``raw_dir`` (an absolute path, a traversal, an image pandoc did not extract)
+    is rejected.
+    """
+    value = unquote(target[1:-1] if target.startswith("<") else target)
+    raw_root = raw_dir.resolve()
+    source = (raw_root / value).resolve()
+    if not (source.is_file() and source.is_relative_to(raw_root)):
         raise ValueError(f"Could not resolve extracted media reference: {target}")
-    return matches[0]
+    return source
 
 
 def _save_jpeg(source: pathlib.Path, destination: pathlib.Path) -> None:
@@ -141,7 +131,8 @@ def extract_paper(docx_path: pathlib.Path, workspace: pathlib.Path) -> str:
             glob.escape(str(docx_path)),
             "markdown+tex_math_dollars",
             format="docx",
-            extra_args=["--wrap=none", "--eol=lf", f"--extract-media={raw_dir}"],
+            extra_args=["--wrap=none", "--eol=lf", "--extract-media=."],
+            cworkdir=raw_dir,
         )
         markdown = _normalize_figures(markdown, pathlib.Path(raw_dir), figure_dir)
     return _with_headers_and_footers(docx_path, markdown)
