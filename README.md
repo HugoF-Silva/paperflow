@@ -1,6 +1,15 @@
 # Notas do Autor
 O README.md foi gerado por IA — exceto as notas do autor.
 
+Em 2026-07, 
+- [x] há ainda apenas 1 plugin (`Academia Perks`) neste marketplace `paperflow`.
+- [x] Há ainda apenas duas skills (`/venue-matcher` e `/converter`) neste `Academia Perks` plugin.
+- [x] `/venue-matcher` encontra venues com bom fit pro paper — e é o passo prévio ao `/converter`.
+- [x] `/converter` é a sequência lógica do `/venue-matcher` — adequa o layout do paper pro template LaTeX da venue apropariada.
+- [x] Pode ser executado em batch ou paper por paper.
+- [x] Suporta apenas conversão pra LaTeX.
+- [x] Depende da uma chave de API da OpenAI.
+
 Se você prefere utilizar esse plugin através de um produto digital baseado em agentes de IA, 
 você precisará de ao menos uma conta no GitHub e recomendo que tenha Claude Desktop instalado na sua máquina.
 Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
@@ -88,10 +97,13 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
 * Eu recomendo que o mantenedor altere essa instrução pra sempre definir um modelo mais barato e eficiente como o "gpt-5.4-mini".
 > Se não o leitor não é um modelo da OpenAI, a atual instrução é definir "gpt-5.4-mini" como fallback.
 
-#### 2. Resultados são gerados dentro da pasta em que a sua sessão do Claude está aberta; entre os resultados há:
-* Resultados do /venue-matcher: ranking.md (um ranking de venues que casam com um paper, em ordem decrescente de fit)
-* Resultados do /converter: pacote LaTeX do paper convertido para o template da venue mais apropriada (com pdf já compilado dentro)
-* Resultados independentes das skills: _progress.log (quantos papers já foram concluídos) e _execution.log (o que o agente do ralph loop tá fazendo e falando)
+#### 2. Resultados são gerados dentro da pasta em que a sua sessão do Claude está aberta:
+* Resultados não são gerados na pasta de papers a não ser que a sessão do Claude seja aberta no contexto da pasta de papers.
+
+#### 4. Entre os resultados gerados, há:
+* Resultados do /venue-matcher: `ranking.md` (um ranking de venues que casam com um paper, em ordem decrescente de fit)
+* Resultados do /converter: pacote LaTeX do paper convertido para o template da venue mais apropriada (com `.pdf` já compilado dentro)
+* Resultados independentes das skills: `_progress.log` (quantos papers já foram concluídos) e `_execution.log` (o que o agente do ralph loop tá fazendo e falando)
 
 #### 3. O `/venue-matcher` não é possível de ser executado individualmente porque, após finalizar, ele majoritariamente executa o `/converter` imediatamente sem que você peça.
 * ⚠️ Então a não ser que você interrompa a execução do `/converter` manualmente, ele será executado.
