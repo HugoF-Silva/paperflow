@@ -1,5 +1,5 @@
 {
-  "name": "academia-perks-openai",
+  "name": "academia-perks",
   "version": "0.1.0",
   "description": "Academic publishing workflows for venue matching and LaTeX conversion.",
   "author": {
@@ -15,7 +15,7 @@
   ],
   "skills": "./skills/",
   "interface": {
-    "displayName": "Academia Perks OpenAI",
+    "displayName": "Academia Perks",
     "shortDescription": "Match venues and convert papers to LaTeX",
     "longDescription": "Use Academia Perks to find fit-ranked publication venues and convert papers into venue-compliant LaTeX submissions.",
     "developerName": "Hugo Fernandes Silva",
