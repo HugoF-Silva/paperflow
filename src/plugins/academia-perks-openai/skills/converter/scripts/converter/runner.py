@@ -110,7 +110,7 @@ def _process_one(unit, max_ralph, inner_max_turns, model):
     import prompts
     import ralph
 
-    extracted_text = extraction.extract_paper(unit.paper)
+    extracted_text = extraction.extract_paper(unit.paper, unit.workspace)
     prompts.build_system_prompt(unit.workspace)
     prompts.build_user_order(unit, extracted_text)
     return ralph.run_for_paper(

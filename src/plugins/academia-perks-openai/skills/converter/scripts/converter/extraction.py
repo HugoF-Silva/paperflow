@@ -128,10 +128,10 @@ def _with_headers_and_footers(docx_path: pathlib.Path, markdown: str) -> str:
     return "\n\n".join(parts) + "\n"
 
 
-def extract_paper(docx_path: pathlib.Path) -> str:
-    """Return Markdown for ``docx_path`` and write stable adjacent JPEG figures."""
+def extract_paper(docx_path: pathlib.Path, workspace: pathlib.Path) -> str:
+    """Return Markdown for ``docx_path`` and write JPEG figures in ``workspace``."""
     docx_path = pathlib.Path(docx_path).resolve()
-    figure_dir = docx_path.parent / docx_path.stem
+    figure_dir = pathlib.Path(workspace) / "extracted_figures"
     if figure_dir.exists():
         shutil.rmtree(figure_dir)
     figure_dir.mkdir(parents=True)
