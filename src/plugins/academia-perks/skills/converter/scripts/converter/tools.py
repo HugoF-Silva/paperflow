@@ -437,6 +437,30 @@ def _process_output(result: subprocess.CompletedProcess, limit: int) -> str:
     return f"{result.stdout or ''}\n{result.stderr or ''}".strip()[-limit:]
 
 
+_OVERFULL = re.compile(
+    r"Overfull \\[hv]box \((?P<points>\d+(?:\.\d+)?)pt too (?:wide|high)\)"
+)
+
+
+def _overfull_boxes(output: str) -> list[str]:
+    """Report the overfull boxes Tectonic named in one compile's output, worst first.
+
+    TeX already measures every box that spills outside the text block — a table
+    wider than the column, text that cannot break — and Tectonic prints each one
+    with its source file and line. That verdict is a handful of lines among
+    hundreds of font notes and harmless underfull warnings, so it is lifted out
+    here into its own field. Underfull boxes are deliberately excluded: they are
+    cosmetic, and they outnumber the real defects badly enough to make the field
+    worthless. Reruns of TeX repeat each warning verbatim, hence the dedup.
+    """
+    worst: dict[str, float] = {}
+    for line in output.splitlines():
+        match = _OVERFULL.search(line)
+        if match:
+            worst[line.strip()] = float(match.group("points"))
+    return sorted(worst, key=lambda line: -worst[line])
+
+
 def _sha256(path: pathlib.Path) -> str:
     digest = hashlib.sha256()
     with path.open("rb") as source:
@@ -542,6 +566,7 @@ def _compile(
         backup.unlink()
     return {
         "exit_code": result.returncode,
+        "overfull": _overfull_boxes(output),
         "output": output,
         "pdf": pdf.relative_to(root).as_posix(),
     }
@@ -607,7 +632,11 @@ def build_tools(cwd: pathlib.Path) -> list:
 
     @function_tool
     def compile(dir: str, main: str) -> str:
-        """Compile one workspace-confined TeX main file with Tectonic."""
+        """Compile one workspace-confined TeX main file with Tectonic.
+
+        The overfull field lists content spilling outside the text block, worst
+        first, with the source file and line that produced it.
+        """
         return json.dumps(_compile(root, dir, main), separators=(",", ":"))
 
     return [
