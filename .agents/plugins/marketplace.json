@@ -5,10 +5,10 @@
   },
   "plugins": [
     {
-      "name": "academia-perks-openai",
+      "name": "academia-perks",
       "source": {
         "source": "local",
-        "path": "./src/plugins/academia-perks-openai"
+        "path": "./src/plugins/academia-perks"
       },
       "policy": {
         "installation": "AVAILABLE",

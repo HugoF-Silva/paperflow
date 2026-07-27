@@ -54,14 +54,12 @@ Skip these guidelines for simple, obvious fixes - don't over-engineer
 - Reuse if possible, but if not: create services which won't deprive you from your job and delete the former.
 - Relentleslly verify documentation and issues available on the internet about any issue you may stumble upon.
 
-### 10. The most important constraint: YAGNI-driven code, always
-- YAGNI!
-- Do NOT add code helplessly.
-- The less, the better.
-- If you are not sure if you should include or not, DO NOT INCLUDE.
-- If the code excerpt can be coded with less lines, code it with LESS LINES.
-- Between ADDING CODELINES or REMOVING CODELINES, opt for REMOVAL.
-- Less features, the better. Make IT SIMPLE, easy, explicity. ALWAYS.
+### 10. The most important constraint: DRY & YAGNI-driven code, always
+Keep your changes  DRY (Don't Repeat Yourself) and YAGNI (You Ain't Gonna Need It). Just keep it simple as it can be. The goal is not to stockpiling more code. If you can delete code, it's even better. Opt for subtraction and deletion instead of stockpiling code. 
+* Do not let "DRY" mentality trick you into adding unnecessary indirection / over-abstraction wrapperitis made of few-lines wrapp; if in order to keep it DRY you need to spread out intent over-extracting methods, you object DRY's main point on why avoid code duplication: reject designs which makes subsequent changes be amplified yielding shotgun surgeries.
+* Do not let "YAGNI" mentality trick you into adding code which avoids something we don't need; yes you ain't gonna need that something you might had ran into as you were implementing, but if in order to avoid that something there's a need to add instead of subtract, you object to YAGNI's main point.
 
-## Gotchas
-- <!-- append lessons here when you gets something wrong -->
+> If the YAGNI mentality tricked you, that also means you started off on the wrong foot assuming made up imaginary needs (e.g. the need to add code to avoid something we don't need) are indeed real needs, going against YAGNI's main point which is "do not implement until there's a real need for it". YAGNI works better when you don't create imaginary needs.
+
+
+Note: Even though the current code is a plenty of spaghetti, ravioli code with over-abstractions and unnecessary indirections, with a lot of one-line wrappers and code semantic duplications — over-abstraction of functions and changes (which forces us to shotgun surgery whenever we need to make a bugfix) are in fact a bad practice. So keep it YAGNI and DRY. Like, let them do it wrong while at least you stay in your lane, tend to your own knitting, and do the job right. Just do your own thing. Let fools be fools. Keep your work clean. This should be an enforced rule for every spawned agent who touches the code. As-is.

@@ -77,7 +77,7 @@ def _configured_output_dir(env=os.environ) -> pathlib.Path | None:
 
 
 def _execution_log_name(repo_root: pathlib.Path) -> str:
-    skill_root = repo_root / "plugins" / "academia-perks-openai" / "skills"
+    skill_root = repo_root / "plugins" / "academia-perks" / "skills"
     for skill_name, script_dir in (("venue-matcher", "venue_matcher"), ("converter", "converter")):
         source = skill_root / skill_name / "scripts" / script_dir / "cli.py"
         if not source.is_file():

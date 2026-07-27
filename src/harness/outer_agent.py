@@ -33,7 +33,7 @@ API_CONFIGS = {
         required_keys=("OPENAI_API_KEY",),
         model_env="OPENAI_MODEL",
         default_model="gpt-5.4-mini",
-        plugin_path=pathlib.Path("plugins") / "academia-perks-openai",
+        plugin_path=pathlib.Path("plugins") / "academia-perks",
     ),
 }
 API_CHOICES = tuple(API_CONFIGS)
