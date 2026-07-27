@@ -52,7 +52,7 @@ def main(argv=None) -> int:
 
     max_ralph = int(os.environ.get("MAX_RALPH", "4"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
-    max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL"))
+    max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL", "auto"))
     model = os.environ[MODEL_ENV]
     log_status(
         f"cli_start api=openai input_dir={args.input_dir} papers={len(papers)} "
