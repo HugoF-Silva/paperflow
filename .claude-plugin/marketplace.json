@@ -10,7 +10,7 @@
       "name": "academia-perks",
       "source": "./src/plugins/academia-perks",
       "displayName": "Academia Perks",
-      "description": "Find fit-ranked publication venues for a paper — conferences, journals, magazines, tracks, and workshops, split into open-now and opening-soon.",
+      "description": "Find fit-ranked publication venues for a paper — conferences, journals, magazines, tracks, and workshops, split into open-now and opening-soon. Also convert papers layout to be compliant to the most suitable venue's LaTeX template",
       "author": {
         "name": "Hugo Fernandes Silva"
       },
