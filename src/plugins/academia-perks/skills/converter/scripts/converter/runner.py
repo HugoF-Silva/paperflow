@@ -11,6 +11,12 @@ from tools import _set_process_nondumpable
 EST_BYTES_PER_WORKER = 800 * 1024 * 1024
 CPU_SAFETY = 0.8
 MEM_SAFETY = 0.7
+# Windows caps file paths at 259 chars without long-path support, and
+# extraction unconditionally stages figures at the deepest fixed chain
+# below each workspace — so longer workspace paths fail with certainty.
+WORKSPACE_PATH_BUDGET = 259 - len(
+    "\\extracted_figures\\tmpxxxxxxxx\\normalized\\figure-001.jpg"
+)
 
 
 @dataclass(frozen=True)
@@ -68,6 +74,13 @@ def select_work_units(
         return output_dir, [WorkUnit(paper, workspace, "chosen-venue", chosen_venue)]
     return output_dir, [
         WorkUnit(paper, workspace, "template-path", template_path.as_posix())
+    ]
+
+
+def workspaces_too_deep(units: list[WorkUnit]) -> list[WorkUnit]:
+    """Work units whose workspace paths certainly exceed Windows path limits."""
+    return [
+        unit for unit in units if len(str(unit.workspace)) > WORKSPACE_PATH_BUDGET
     ]
 
 

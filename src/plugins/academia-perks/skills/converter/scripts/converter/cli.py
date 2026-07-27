@@ -89,6 +89,22 @@ def main(argv=None) -> int:
     except (OSError, TypeError, ValueError) as exc:
         return _error(str(exc), 1)
 
+    if os.name == "nt":
+        too_deep = runner.workspaces_too_deep(units)
+        if too_deep:
+            names = "; ".join(unit.paper.name for unit in too_deep)
+            longest = max(len(str(unit.workspace)) for unit in too_deep)
+            return _error(
+                f"Windows path limit: {len(too_deep)} paper workspace path(s) "
+                f"exceed the {runner.WORKSPACE_PATH_BUDGET}-char budget "
+                f"(longest is {longest}). Place the agent's current working directory "
+                f"somewhere shallower than the current results parrent dir ({batch_root}) "
+                f"so it is created inside that higher level directory, and paper path "
+                f"end up smaller. Or at least shorten the paper filenames to reduce risk "
+                f"of exceeding the windows path char limit. Paper filenames: {names}",
+                2,
+            )
+
     try:
         summary = runner.run_batch(
             units,

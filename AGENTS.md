@@ -63,3 +63,7 @@ Keep your changes  DRY (Don't Repeat Yourself) and YAGNI (You Ain't Gonna Need I
 
 
 Note: Even though the current code is a plenty of spaghetti, ravioli code with over-abstractions and unnecessary indirections, with a lot of one-line wrappers and code semantic duplications — over-abstraction of functions and changes (which forces us to shotgun surgery whenever we need to make a bugfix) are in fact a bad practice. So keep it YAGNI and DRY. Like, let them do it wrong while at least you stay in your lane, tend to your own knitting, and do the job right. Just do your own thing. Let fools be fools. Keep your work clean. This should be an enforced rule for every spawned agent who touches the code. As-is.
+
+## Reusables index
+- `src/plugins/academia-perks/skills/converter/scripts/converter/runner.py` — `WORKSPACE_PATH_BUDGET` / `workspaces_too_deep(units)`: Windows path-limit preflight (259-char file cap minus extraction's staged-figure chain → 203-char workspace budget); the CLI refuses certain-failure papers upfront, gated on `os.name == "nt"`.
+- `src/plugins/academia-perks/skills/venue-matcher/scripts/venue_matcher/runner.py` — `WORKSPACE_PATH_BUDGET` / `workspaces_too_deep(out_dir, papers)`: same-shaped preflight with the matcher's own bound (247-char directory cap). Same shape as the converter's on purpose, but the budgets differ per skill's artifacts — don't unify them.

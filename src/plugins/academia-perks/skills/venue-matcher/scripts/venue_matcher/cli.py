@@ -50,6 +50,24 @@ def main(argv=None) -> int:
         print(f"No .docx papers found in {args.input_dir}", file=sys.stderr, flush=True)
         return 1
 
+    if os.name == "nt":
+        too_deep = runner.workspaces_too_deep(out_dir, papers)
+        if too_deep:
+            names = "; ".join(paper.name for paper in too_deep)
+            longest = max(len(str(out_dir.resolve() / paper.stem)) for paper in too_deep)
+            print(
+                f"Windows path limit: {len(too_deep)} paper workspace path(s) "
+                f"exceed the {runner.WORKSPACE_PATH_BUDGET}-char budget "
+                f"(longest is {longest}). Place the agent's current working directory "
+                f"somewhere shallower than the current results's parent dir "
+                f"({out_dir.resolve()}) so it is created inside that higher level directory, "
+                f"and paper path end up smaller. Or at least shorten the paper filenames "
+                f"to reduce risk of exceeding the windows path char limit. "
+                f"Paper filenames: {names}",
+                file=sys.stderr, flush=True,
+            )
+            return 2
+
     max_ralph = int(os.environ.get("MAX_RALPH", "4"))
     inner_max_turns = max(50, int(os.environ.get("INNER_MAX_TURNS", "50")))
     max_parallel = runner.resolve_max_parallel(os.environ.get("MAX_PARALLEL", "auto"))
