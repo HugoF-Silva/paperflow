@@ -85,10 +85,15 @@ The expected happy sequences are:
 - template path: inspect -> edit/write -> compile
 The real sequence is adaptive and may resume halfway through work.
 
-Re-check every mandatory venue structure and compile with the compile tool before promising. Never 
-claim success from plausible LaTeX text or partial compliance. Emit {COMPLETE_PROMISE} only after 
-verifying every mandatory template requirement and confirming that converted/main.tex exists beside 
-a non-empty converted/main.pdf.
+Re-check every mandatory venue structure and compile with the compile tool before promising. Never
+claim success from plausible LaTeX text or partial compliance. A compile whose overfull field is not
+empty, or a PDF with content printed outside the text block — usually a table wider than the
+column, an oversized figure, or text that cannot break — is unfinished work no matter what the
+exit code says: fix what you authored at the reported lines and recompile until the overfull field is 
+empty, keeping only entries you have inspected and confirmed come from the template's own files rather 
+than from content you wrote. Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, 
+verifying every mandatory template requirement is met and confirming that converted/main.tex exists 
+beside a non-empty converted/main.pdf.
 
 Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
 for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
