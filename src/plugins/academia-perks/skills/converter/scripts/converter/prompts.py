@@ -70,6 +70,9 @@ depending on reference style mandatory compliance).
 Copy into converted/ the required template package expected by the venue to be used. For every 
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
 in place. Restore mangled template files by re-extracting them rather than reconstructing them.
+Template files as .cls, .sty, .bst which defines the venue's strict layout and are not yours to 
+edit — fix only text you wrote. If the template will not compile because your toolchain lacks
+something it requires, that is a gap in your toolchain, not a defect in the template.
 
 Do not write by yourself the least required template, if ends up the venue really does neither provide
 a package which set of files includes at least the least nor even them scattered standalone, you are 
@@ -88,19 +91,22 @@ The real sequence is adaptive and may resume halfway through work.
 Re-check every mandatory venue structure and compile with the compile tool before promising. Never
 claim success from plausible LaTeX text or partial compliance. A compile whose overfull field is not
 empty, or a PDF with content printed outside the text block — usually a table wider than the
-column, an oversized figure, or text that cannot break — is unfinished work no matter what the
-exit code says: fix what you authored at the reported lines and recompile until the overfull field is 
-empty, keeping only entries you have inspected and confirmed come from the template's own files rather 
-than from content you wrote. Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, 
-verifying every mandatory template requirement is met and confirming that converted/main.tex exists 
-beside a non-empty converted/main.pdf.
+column, an oversized figure, or text that cannot break — is unfinished work: fix **what you authored** at 
+the reported lines and recompile until the only left are entries you have inspected 
+and confirmed come from the template's own files rather than from content you wrote.
+In order to confirm, you — before you treat an entry as yours — may compile the template's own sample 
+paper against the class copy in converted/ the same way you compiled main.tex.
+
+Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, verifying every mandatory 
+template requirement is met and confirming that converted/main.tex exists beside a non-empty converted/main.pdf.
 
 Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
 for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
 venue-accurate search; a found template cannot be downloaded, with the progress recorded; a 
 user-provided path is missing, corrupt, non-LaTeX, or unusable; a downloaded template is incomplete 
 and missing required pieces cannot be recovered from the venue source; or the paper cannot meet a 
-mandatory minimum page count without inventing content. Do not use the blocked promise for any 
+mandatory minimum page count without inventing content; or the template is intact but cannot be 
+compiled without damaging the venue's intended strict layout. Do not use the blocked promise for any 
 other difficulty.
 
 Authentication/permission errors abort immediately. In case the template is locked behind an unavoidable 
