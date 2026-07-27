@@ -70,13 +70,17 @@ Abra o gerenciador de plugin novamente da Fig. 1
 Academia perks deve estar na lista. Clique.
 
 #### Fig. 9
-<img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/5e6cf76d-b5eb-4c55-b91e-0d9231f21d16" />
+
+<img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/967963c2-f0f4-4420-bbfa-611f073d0992" />
+<img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/a2f6bdfc-f3be-42e5-9337-4e5024dd2423" />
+<img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/3d6000ab-9a80-4ae3-94a0-9a547fae7908" />
+<img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/19a7cc56-28cb-44b1-9b7a-65fa65a0d8af" />
 
 Garanta que o plugin está atualizado e ativado. 
 
-Sempre que houver a atualização de versionamento neste repositório (i.e. um novo commit na main), o botão `Update` será liberado para atualizar.
+Sempre que checar se há atualizações de versionamento `x.x.x` pendentes deste repositório, e de fato houver: o botão `Update` será liberado para atualizar.
 
-Recomendo que caso saiba de atualização, volte nesta janela e atualize.
+Recomendo que caso saiba que houve aumento no número da versão, volte na janela da Fig. 6 e cheque as atualizações.
 
 #### Fig. 10
 <img width="269" height="195" alt="image" src="https://github.com/user-attachments/assets/317d64cc-2d68-4fa1-ab78-e38224d6abad" />
