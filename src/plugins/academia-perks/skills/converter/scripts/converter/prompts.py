@@ -118,7 +118,7 @@ the reported lines and recompile until the only ones left are entries you have i
 and confirmed they came from the template's own files rather than from content you wrote.
 
 The line an overfull entry names is where TeX finished the box, not where the markup that caused it lives, 
-so usually an entry landing on things like \end{{...}} or on a line carrying no prose is often emitted 
+so usually an entry landing on things like \\end{{...}} or on a line carrying no prose is often emitted 
 by the template's own class rather than by anything you wrote.
 
 #### To finish your work:
@@ -133,7 +133,7 @@ Emit {COMPLETE_PROMISE} only after **all** of these things are ensured:
   to the targeted event — confirming the converted paper indeed complies to those venue's mandatory 
   pre-submission requirements and/or instructions.
 
-Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following causes be the reason (write the conversion-status.md with the verified reason): 
+Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following things happen — also remember to ensure the conversion-status.md is writen with the verified reason to block aside from saying/emitting the promise: 
 * no venue-specific LaTeX template exists after thorough venue-accurate search; 
 * a found template cannot be downloaded; 
 * a user-provided template path is missing, corrupt, non-LaTeX, or unusable; 
