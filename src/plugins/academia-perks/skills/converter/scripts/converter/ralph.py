@@ -98,9 +98,9 @@ def _blocked_artifact(
 
 
 def _final_promise(text: str) -> str | None:
-    for line in reversed((text or "").splitlines()):
-        if line.strip():
-            return line if line in {prompts.COMPLETE_PROMISE, prompts.BLOCKED_PROMISE} else None
+    for promise in (prompts.COMPLETE_PROMISE, prompts.BLOCKED_PROMISE):
+        if promise in (text or ""):
+            return promise
     return None
 
 
