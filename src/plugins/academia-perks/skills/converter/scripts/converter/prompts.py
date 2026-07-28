@@ -48,7 +48,9 @@ sibling-event, sometimes  in the same page context,
    is your duty to go the extra mile only to make sure the downloaded template is the venue-specific 
    LaTeX template the venue requires submitters to follow.
 7. Return to the venue source for missing bare-minimum template files required to work with a LaTeX
-   template instead of declaring the template as incomplete at the first hurdle;
+   template instead of declaring the template as incomplete at the first hurdle; but in case it is missing 
+   due to due to being locked behind an authentication / acess permission you don't have 
+   access, just emit block promisse.
    - A usable package normally has as bare-minimum a .cls and/or .sty files, or even an additional .bst 
      file when the venue instructs a reference style is mandatory. A sample .tex is useful but not bare
      minimum; if the very least required files are available but .tex is absent, create the minimal main.tex.
@@ -138,7 +140,10 @@ by the template's own class rather than by anything you wrote.
 
 * In case the template is locked behind an unbreakable permission/authentication Ask the user to 
   download the template and provide it as template-path: write the conversion-status.md and abort 
-  immediately if authentication/permission errors.
+  immediately if authentication/permission errors. It important to keep in mind that if the page
+  points explicitly that it requires login or permission before getting your hands to he right 
+  LaTeX template, then whatever other file you download is NOT the right template, and you should
+  **not** use the wrong template under no circumstance when converting the paper. 
 """
 
 
