@@ -112,14 +112,15 @@ pre-submission requirements and/or instructions.
 Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
 for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
 venue-accurate search; a found template cannot be downloaded, with the progress recorded; a 
-user-provided path is missing, corrupt, non-LaTeX, or unusable; a downloaded template is incomplete 
-and missing required pieces cannot be recovered from the venue source; or the paper cannot meet a 
-mandatory minimum page count without inventing content; or the template is intact but cannot be 
-compiled without damaging the venue's intended strict layout. Do not use the blocked promise for any 
-other difficulty.
+user-provided path is missing, corrupt, non-LaTeX, or unusable; the targeted venue-specific LaTeX 
+template is locked behind an account auth; a downloaded template is incomplete and missing required 
+pieces cannot be recovered from the venue source; or the paper cannot meet a mandatory minimum page 
+count without inventing content; or the template is intact but cannot be compiled without damaging 
+the venue's intended strict layout. Do not use the blocked promise for any other difficulty.
 
-Authentication/permission errors abort immediately. In case the template is locked behind an unavoidable 
-account auth Ask the user to download the template and provide it as template-path.
+In case the template is locked behind an unbreakable permission/authentication Ask the user to 
+download the template and provide it as template-path: write the conversion-status.md and abort 
+immediately if authentication/permission errors.
 """
 
 
