@@ -144,13 +144,13 @@ Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following 
 
 **Do not use the blocked promise for any other difficulty**.
 
-> In case the template is locked behind a permission/authentication, don't even try it, just
-  write the conversion-status.md and abort by emitting {BLOCKED_PROMISE} immediately, use this as opportunity
-  to specify to the user the need for authentication/permission and ask them to download the template and 
-  provide it as template-path. It is important to keep in mind that if there's an explicit need to login or 
-  have permission before you can get your hands to the right LaTeX template, that means whatever other thing 
-  you download will NOT be the right template, and you should **not** use the wrong template under no 
-  circumstance when converting the paper.
+In case the template is locked behind an account login / auth, do neither even try it nor try to find other 
+way to get the template in this case, just write the conversion-status.md and abort by emitting {BLOCKED_PROMISE} 
+immediately, use this as opportunity to specify to the user the need for account authentication: ask them 
+to download the template and provide it as template-path. It is important to keep in mind that if there's 
+an explicit need to login or the need for permission before you can get your hands to the right LaTeX 
+template, that means whatever other thing you download will NOT be the right template, and you should 
+**not** use the wrong template under no circumstance when converting the paper.
 """
 
 
@@ -163,8 +163,8 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         )
     elif unit.mode == "chosen-venue":
         source_instruction = (
-            "I'm providing you an URL regarding the venue I chose of what I think it "
-            "seems to be their template. Not sure though, inspect and use in case it indeed is."
+            "I'm providing you an URL regarding template of the venue I chose. At least is what"
+            "I think it seems to be their template. I'm not sure though, inspect, and if indeed is, use it."
             "Download and verify the strict venue LaTeX template described in this "
             f"chosen-venue paragraph: {unit.source}"
         )
