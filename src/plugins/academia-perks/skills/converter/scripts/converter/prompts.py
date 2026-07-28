@@ -39,11 +39,13 @@ For ranking and chosen-venue URL modes:
 4. Search closely related official venue pages when the supplied URL isn't neither the LaTeX
    template itself nor provides content which links directly to the real venue-specific 
    LaTeX template.
-5. Download the right template into {downloads}.
+5. Download the right template into {downloads}. CAUTION!: 
+   - Do not mistake instructions for the template.
+   - Instructions are helpful to guide the author (submitter), but they do not replace the LaTeX template.
 6. The user may had provided the wrong URL for the LaTeX template thinking it was from a venue 
-   but it was from a sibling-event. So, in order to convert the user's paper, is your duty to 
-   go the extra mile only to make sure the downloaded template is the venue-specific one the 
-   venue requires submitters to follow.
+   but it was from a sibling-event, or instructions. So, in order to convert the user's paper,
+   is your duty to go the extra mile only to make sure the downloaded template is the venue-specific 
+   LaTeX template the venue requires submitters to follow.
 7. Return to the venue source for missing bare-minimum template files required to work with a LaTeX
    template instead of declaring the template as incomplete at the first hurdle;
    - A usable package normally has as bare-minimum a .cls and/or .sty files, or even an additional .bst 
@@ -74,7 +76,7 @@ Template files as .cls, .sty, .bst which defines the venue's strict layout and a
 edit — fix only text you wrote. If the template will not compile because your toolchain lacks
 something it requires, that is a gap in your toolchain, not a defect in the template.
 
-Do not write by yourself the least required template, if ends up the venue really does neither provide
+Do not write by yourself the least required template, if it turns out the venue really does neither provide
 a package which set of files includes at least the least nor even them scattered standalone, you are 
 not the one to design them from scratch.
 
@@ -88,7 +90,7 @@ The expected happy sequences are:
 - template path: inspect -> edit/write -> compile
 The real sequence is adaptive and may resume halfway through work.
 
-Re-check every mandatory venue structure and compile with the compile tool before promising. Never
+Re-check every mandatory venue structure and compile with the compile tool before making any promise. Never
 claim success from plausible LaTeX text or partial compliance. A compile whose overfull field is not
 empty, or a PDF with content printed outside the text block — usually a table wider than the
 column, an oversized figure, or text that cannot break — is unfinished work: fix **what you authored** at 
@@ -100,7 +102,12 @@ so  usually an entry landing on things like \end{{...}} or on a line carrying no
 by the template's own class rather than by anything you wrote.
 
 Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, verifying every mandatory 
-template requirement is met and confirming that converted/main.tex exists beside a non-empty converted/main.pdf.
+template requirement is met, confirming that converted/main.tex exists beside a non-empty converted/main.pdf, 
+confirming the converted paper's new arrangement and language actually mirrors the original content but 
+ensuring it corresponds the venue's LaTeX template layout and requirements and — if there are any 
+__not-template-confined__ venue's mandatory requirements and/or instructions for papers to be submmited 
+to the targeted event — confirming the converted paper indeed complies to those venue's mandatory 
+pre-submission requirements and/or instructions.
 
 Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
 for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
@@ -138,18 +145,56 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "Convert the paper to 100% of the venue's mandatory LaTeX template "
         "requirements, this means ensuring the paper structure is compliant to "
         "a LaTeX template package. Keep the paper's original language regardless of the "
-        "order or search language. Preserve paragraph wording and terminology "
-        "exactly and retain all content faithfully. Drop a whole section only "
-        "when mandatory template section names make the original section "
-        "structurally impossible to retain. Summarize only after a successful "
-        "compile proves that the paper exceeds a mandatory page limit; when summarizing, "
-        "preserve wording and terminology while shortening long-winded text, then cut "
-        "only material outside the main point if still necessary. Do neither include template's "
-        "optional sections which the authors did not bothered to write nor sections which are "
-        "only mandatory after the paper is accepted — not even their title; If authors wrote "
+        "order or search language. Templates are like fields with placeholders: they allow "
+        "you to __fill the holes__ e.g. "
+        "* fill headers's schema with authors header's contents, "
+        "* replace inapplicable section headings with essential section's headings, "
+        "* fill sections with research accounts and findings, even splitting some in component subsections when there is too much content crammed for the section, "
+        "* fill footnotes with authors footnotes's content, "
+        "* etc; "
+        "\n"
+        "The paper may or may not have content to fill / replace the venue template's mandatory fields / placeholders, "
+        "* if there's lacking content, you know you can't invent just to proceed. Do not make up content. "
+        "* If they are mandatory only at a later phase after submission, do not fill them. "
+        "* If there's a template expected section heading which is different from the "
+        "paper's section(s) heading(s) but the section(s) in the paper is(are) analogous "
+        "to the template's section, fill the section with the paper's content(s). "
+        "\n"
+        "The paper may or may not present fields and content beyond what is mandatory by the template: "
+        "*s If the paper has more content than the template sections calls to fill, do not use the "
+        "'not-requested' surplus content. "
+        "* If there are fields which are strictly for the venue's staff or reviewers to fill, do not fill them. "
+        "* If the paper has fields beyond the template's fields, do not use those paper fields's contents —"
+        "__unless__ some or all content of an exceeding field seems to be a sound addition to a non-identical "
+        "template field due to the template field ressamble the content in an solid way. "
+        "\n"
+        "The rule of thumb is — when arranging the paper to match the template layout: "
+        "* to favor template fields's names, headers's schema and sections's headings **over** the paper fields's names, headers's schema and sections's headings but "
+        "* to favor the paper field's contents, headers's contents and sections's contents's **over** the template field's contents, headers's contents and sections's contents. "
+        "> but there are indeed exceptions, for example: "
+        "> when there's no paper content corresponding to a template field, which should not be made up just to fill the template, (then we don't "
+        "cut out this template's content in favor of the paper's themed content)"
+        "> or like when there's paper content beyond what the venue's template calls for, (then we don't favor this paper's exceeding content)" 
+        "> or even when the template has a field which content is clearly a placeholder, but should be filled by any author's content since is not "
+        "for the author to fill yet. (then we don't cut this placeholder out in favor of any paper's themed content)" 
+        "> or when the template has a section headings which were only crucial as a matter of __instructions for authors__ — "
+        "but not pertinent as a matter of __the paper for submission per se__. (then we don't favor these sections headings and "
+        "titles over a paper's section heading or title which could occupy this spot). "
+        "\n\n"
+        "> These exceptions also means that when the paper's original content is already template-oriented arranged and "
+        "it fits the amount of pages range allowed, we drop a whole paper's original section only when there are template's "
+        "mandatory section headings which makes the original paper's sections structurally impossible to retain."
+        "> And also means you should neither include in the final arranged paper any template's optional sections which "
+        "the authors did not bothered to write content for"
+        "> nor include sections which are only mandatory after the paper is accepted, not even include their headings/titles. "
+        "\n\n"
+        "Overall, preserve paragraph wording and terminology exactly and retain all content faithfully. "
+        "Summarize only after a successful compile proves that the paper exceeds a mandatory page limit; "
+        "when summarizing, preserve wording and terminology while shortening long-winded text, then cut "
+        "only material outside the paper's main point if still necessary. If authors wrote "
         "content for template's optional sections, cut them out in case the paper exceeds "
         "mandatory page limit. Never claim success at partial compliance. Re-check every "
-        "mandatory structural requirement and compile before promising."
+        "mandatory structural requirement and compile before making any promise."
     )
     return f"{source_instruction}\n\n{strict_conversion_order}\n\n---\nPAPER CONTENT:\n{paper_text}"
 

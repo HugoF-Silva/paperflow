@@ -1,6 +1,6 @@
 {
   "name": "academia-perks",
-  "version": "0.1.5",
+  "version": "0.1.6",
   "description": "Academic publishing workflows for venue matching and LaTeX conversion.",
   "author": {
     "name": "Hugo Fernandes Silva"
