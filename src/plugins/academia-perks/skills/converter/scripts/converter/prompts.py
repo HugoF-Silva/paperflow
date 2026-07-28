@@ -28,12 +28,12 @@ a. ranking.md (w/ URL along ranked venus),
 b. inline chosen venue (w/ URL), 
 c. template local path.
 
+## (a) or (b) mode — If the user opted for providing a ranking.md or chose the venue URL:
 The user is never sure whether the URL really points to the downloadable LaTeX template link, 
 the user may had provided a URL which page contains the LaTeX template hyperlink; most of those 
 venues provides other workshops / tracks in pages which shares the same domain i.e. a 
-sibling-event, sometimes  in the same page context,
+sibling-event, sometimes  in the same page context, so
 
-## For ranking and chosen-venue URL modes:
 1. Identify the targeted venue; in ranking results mode, use only the ranking's top-1 venue.
 2. Verify whether the supplied URL is a real template or a page linking to one.
 3. Verify the venue/track/workshop identity and reject sibling-event templates.
@@ -55,11 +55,11 @@ sibling-event, sometimes  in the same page context,
      file when the venue instructs a reference style is mandatory. A sample .tex is useful but not bare
      minimum; if the very least required files are available but .tex is absent, create the minimal main.tex.
      
-## For template-path mode:
-1. First verify that the supplied path is an extractable archive or usable LaTeX package. A usable 
+## (c) mode — If the user opted to provide you a template-path:
+1. First verify that the user's supplied path is an extractable archive or usable LaTeX package. A usable 
    user-supplied path is treated as the right venue template; do not re-search the venue in this case.
 
-## After having access to the right targeted venue specific event's LaTeX template, no matter the mode: 
+## Regardless of the mode, after gotting your hands to the right targeted venue specific event's LaTeX template: 
 
 #### Overall:
 * Do **not** create from scratch LaTeX template's very least required files or bare minimum files: if 
@@ -78,6 +78,8 @@ sibling-event, sometimes  in the same page context,
   point prior work reached. After obtaining a template, inspect the directory contents before deciding 
   what to do and recursively extract nested archives.
 
+* If you come across any difficulty, write/update a non-empty conversion-status.md with the verified reason.
+
 The expected happy sequences are:
 - if ranking/chosen: search -> fetch_url -> download_file -> inspect -> edit/write -> compile
 - if template path: inspect -> edit/write -> compile
@@ -85,7 +87,7 @@ The expected happy sequences are:
 But the real sequence is adaptive, and may resume halfway through work; there's no real limit to the amount
 of times some of those sequence's steps can be repeated, there's only common sense towards the goal.
 
-#### Basic procedure nevertheless:
+#### Basic procedure you must follow nevertheless:
 
 1. Verify whether the usable template is extractable, extract every archive member instead of selectively 
 extraction of archive members.
@@ -119,26 +121,30 @@ The line an overfull entry names is where TeX finished the box, not where the ma
 so usually an entry landing on things like \end{{...}} or on a line carrying no prose is often emitted 
 by the template's own class rather than by anything you wrote.
 
-#### Finishing the work:
+#### To finish your work:
 
-* Emit {COMPLETE_PROMISE} only after ensuring the text fit within its boundaries, verifying every mandatory 
-  template requirement is met, confirming that converted/main.tex exists beside a non-empty converted/main.pdf, 
-  confirming the converted paper's new arrangement and language actually mirrors the original content but 
+Emit {COMPLETE_PROMISE} only after **all** of these things are ensured: 
+* ensuring the text fit within its boundaries, 
+* verifying every mandatory template requirement is met, 
+* confirming that converted/main.tex exists beside a non-empty converted/main.pdf, 
+* confirming the converted paper's new arrangement and language actually mirrors the original content but 
   ensuring it corresponds the venue's LaTeX template layout and requirements and — if there are any 
   __not-template-confined__ venue's mandatory requirements and/or instructions for papers to be submmited 
   to the targeted event — confirming the converted paper indeed complies to those venue's mandatory 
   pre-submission requirements and/or instructions.
 
-* Emit {BLOCKED_PROMISE} only after writing a non-empty conversion-status.md with the verified reason 
-  for one genuine terminal gate: no venue-specific LaTeX template exists after thorough 
-  venue-accurate search; a found template cannot be downloaded, with the progress recorded; a 
-  user-provided path is missing, corrupt, non-LaTeX, or unusable; the targeted venue-specific LaTeX 
-  template is locked behind an account auth; a downloaded template is incomplete and missing required 
-  pieces cannot be recovered from the venue source; or the paper cannot meet a mandatory minimum page 
-  count without inventing content; or the template is intact but cannot be compiled without damaging 
-  the venue's intended strict layout. Do not use the blocked promise for any other difficulty.
+Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following causes be the reason (write the conversion-status.md with the verified reason): 
+* no venue-specific LaTeX template exists after thorough venue-accurate search; 
+* a found template cannot be downloaded; 
+* a user-provided template path is missing, corrupt, non-LaTeX, or unusable; 
+* the targeted venue-specific LaTeX template is locked behind an account auth; 
+* a downloaded template is incomplete and missing required pieces cannot be recovered from the venue source; 
+* the paper cannot meet a mandatory minimum page count without inventing content; 
+* the template is intact but cannot be compiled without damaging the venue's intended strict layout. 
 
-* In case the template is locked behind an unbreakable permission/authentication Ask the user to 
+**Do not use the blocked promise for any other difficulty**.
+
+> In case the template is locked behind an unbreakable permission/authentication Ask the user to 
   download the template and provide it as template-path: write the conversion-status.md and abort 
   immediately if authentication/permission errors. It important to keep in mind that if the page
   points explicitly that it requires login or permission before getting your hands to he right 
@@ -150,16 +156,20 @@ by the template's own class rather than by anything you wrote.
 def build_user_order(unit: WorkUnit, paper_text: str) -> str:
     if unit.mode == "results":
         source_instruction = (
+            "I'm providing you a ranking.md."
             "Use the top-1 venue's LaTeX template URL/evidence from the mapped "
             f"ranking.md at {unit.source}, and verify the true venue template."
         )
     elif unit.mode == "chosen-venue":
         source_instruction = (
+            "I'm providing you an URL regarding the venue I chose of what I think it "
+            "seems to be their template. Not sure though, inspect and use in case it indeed is."
             "Download and verify the strict venue LaTeX template described in this "
             f"chosen-venue paragraph: {unit.source}"
         )
     elif unit.mode == "template-path":
         source_instruction = (
+            "I'm providing you a template path."
             f"Inspect and use the LaTeX template at the supplied path: {unit.source}"
         )
     else:
