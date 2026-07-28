@@ -145,11 +145,12 @@ Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following 
 **Do not use the blocked promise for any other difficulty**.
 
 > In case the template is locked behind a permission/authentication, don't even try it, just
-  write the conversion-status.md and abort immediately reporting the need for authentication/permission
-  and asking the user to download the template and provide it as template-path. It is important to keep 
-  in mind that if there's an explicit need to login or have permission before you can get your hands to 
-  the right LaTeX template, that means whatever other thing you download will NOT be the right template, 
-  and you should **not** use the wrong template under no circumstance when converting the paper.
+  write the conversion-status.md and abort by emitting {BLOCKED_PROMISE} immediately, use this as opportunity
+  to specify to the user the need for authentication/permission and ask them to download the template and 
+  provide it as template-path. It is important to keep in mind that if there's an explicit need to login or 
+  have permission before you can get your hands to the right LaTeX template, that means whatever other thing 
+  you download will NOT be the right template, and you should **not** use the wrong template under no 
+  circumstance when converting the paper.
 """
 
 
