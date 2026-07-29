@@ -102,7 +102,9 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
 > Se não o leitor não é um modelo da OpenAI, a atual instrução é definir "gpt-5.4-mini" como fallback.
 
 #### 2. Resultados são gerados dentro da pasta em que a sua sessão do Claude está aberta:
-* Resultados não são gerados na pasta de papers a não ser que a sessão do Claude seja aberta no contexto da pasta de papers.
+* Resultados não são gerados na pasta dos seus papers a não ser que 
+  * a sessão do Claude seja aberta no contexto da pasta dos seus papers,
+  * o Claude entre na pasta dos seus papers e, de dentro dessa pasta, execute a SKILL (e.g. Terminal > `cd <caminho-pra-pasta-papers> && <linha-de-comando-do-programa-da-skill>`)
 
 #### 4. Entre os resultados gerados, há:
 * Resultados do /venue-matcher: `ranking.md` (um ranking de venues que casam com um paper, em ordem decrescente de fit)
