@@ -239,7 +239,26 @@ def _output_as_input_item(item) -> dict:
 
 
 def _response_input_items(response) -> list[dict]:
-    return [_output_as_input_item(item) for item in (_field(response, "output") or [])]
+    items = [_output_as_input_item(item) for item in (_field(response, "output") or [])]
+    if _is_max_output_response(response):
+        items += [
+            {
+                "type": "function_call_output",
+                "call_id": item["call_id"],
+                "output": (
+                    "Your attempt to make a tool call/function call was not executed: it reached its "
+                    "token limit while writing this call's argument — too much information in a single "
+                    "call attempt. if you need to make this call as-is anyway, "
+                    "why don't you split it if possible? If possible, just split it: write a part, see "
+                    "the result by reading it, then edit with the lacking part. If not possible to "
+                    "do it piece by piece without losing the significance of it, the sensible move might "
+                    "be to call something else. "
+                ),
+            }
+            for item in items
+            if item.get("type") == "function_call"
+        ]
+    return items
 
 
 def _tool_output_input_item(item) -> dict:
