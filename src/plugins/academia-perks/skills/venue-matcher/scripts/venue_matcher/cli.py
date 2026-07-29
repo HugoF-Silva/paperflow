@@ -8,7 +8,7 @@ import os
 import pathlib
 import sys
 
-from logging_utils import EXECUTION_LOG_ENV, log_status
+from logging_utils import EXECUTION_LOG_ENV, log_status, print_console
 import runner
 
 MODEL_ENV = "VENUE_MATCHER_MODEL"
@@ -41,13 +41,15 @@ def main(argv=None) -> int:
 
     missing = missing_env_vars(os.environ, REQUIRED_ENV)
     if missing:
-        print(f"The following environment variables are not set: {', '.join(missing)}",
-              file=sys.stderr, flush=True)
+        print_console(
+            f"The following environment variables are not set: {', '.join(missing)}",
+            file=sys.stderr,
+        )
         return 2
 
     papers = sorted(args.input_dir.glob("*.docx"))
     if not papers:
-        print(f"No .docx papers found in {args.input_dir}", file=sys.stderr, flush=True)
+        print_console(f"No .docx papers found in {args.input_dir}", file=sys.stderr)
         return 1
 
     if os.name == "nt":
@@ -55,7 +57,7 @@ def main(argv=None) -> int:
         if too_deep:
             names = "; ".join(paper.name for paper in too_deep)
             longest = max(len(str(out_dir.resolve() / paper.stem)) for paper in too_deep)
-            print(
+            print_console(
                 f"Windows path limit: {len(too_deep)} paper workspace path(s) "
                 f"exceed the {runner.WORKSPACE_PATH_BUDGET}-char budget "
                 f"(longest is {longest}). Place the agent's current working directory "
@@ -64,7 +66,7 @@ def main(argv=None) -> int:
                 f"and paper path end up smaller. Or at least shorten the paper filenames "
                 f"to reduce risk of exceeding the windows path char limit. "
                 f"Paper filenames: {names}",
-                file=sys.stderr, flush=True,
+                file=sys.stderr,
             )
             return 2
 
@@ -84,13 +86,14 @@ def main(argv=None) -> int:
         f"cli_finish succeeded={summary['succeeded']} total={summary['total']} "
         f"failed={summary['failed']} out_dir={out_dir}"
     )
-    print(f"Done: {summary['succeeded']}/{summary['total']} succeeded "
-          f"({summary['failed']} failed). Results in {out_dir}", flush=True)
+    print_console(
+        f"Done: {summary['succeeded']}/{summary['total']} succeeded "
+        f"({summary['failed']} failed). Results in {out_dir}"
+    )
     stems = summary["agent_result_stems"]
-    print(
+    print_console(
         f"Completed per-paper matcher-agent results: {len(stems)} "
-        f"[{', '.join(stems)}]",
-        flush=True,
+        f"[{', '.join(stems)}]"
     )
     return 0 if summary["failed"] == 0 else 1
 
