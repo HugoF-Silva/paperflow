@@ -110,7 +110,7 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
 Por default, o Claude executa o comando na pasta em que a sessão foi aberta, 
 > mas pode acontecer diferente se o Claude espontaneamente resolver executar o comando dentro de outra pasta.
 
-Você não verá resultados surgindo na pasta que quer, a não ser que o Claude execute o comando na pasta do seu interesse; como por exemplo:
+Então não verá resultados surgindo na pasta que quer a não ser que o Claude execute o comando na pasta do seu interesse; como por exemplo ele executar:
 *  `cd <pasta-dos-papers> && <linha-de-comando-do-programa-da-skill>`
 *  `<linha-de-comando-do-programa-da-skill>` _(default: executa o comando na pasta utilizada na sessão --> gera resultado na pasta da sessão)_
 *  `cd <pasta-do-template> && <linha-de-comando-do-programa-da-skill>`
