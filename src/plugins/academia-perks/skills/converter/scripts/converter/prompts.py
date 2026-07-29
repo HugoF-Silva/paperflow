@@ -157,21 +157,21 @@ template, that means whatever other thing you download will NOT be the right tem
 def build_user_order(unit: WorkUnit, paper_text: str) -> str:
     if unit.mode == "results":
         source_instruction = (
-            "I'm providing you a ranking.md."
+            "I'm providing you a ranking.md. "
             "Use the top-1 venue's LaTeX template URL/evidence from the mapped "
-            f"ranking.md at {unit.source}, and verify the true venue template."
+            f"ranking.md at {unit.source}, and verify the true venue template. "
         )
     elif unit.mode == "chosen-venue":
         source_instruction = (
-            "I'm providing you an URL regarding template of the venue I chose. At least is what"
-            "I think it seems to be their template. I'm not sure though, inspect, and if indeed is, use it."
+            "I'm providing you an URL regarding template of the venue I chose. At least is what "
+            "I think it seems to be their template. I'm not sure though, inspect, and if indeed is, use it. "
             "Download and verify the strict venue LaTeX template described in this "
-            f"chosen-venue paragraph: {unit.source}"
+            f"chosen-venue paragraph: {unit.source} "
         )
     elif unit.mode == "template-path":
         source_instruction = (
-            "I'm providing you a template path."
-            f"Inspect and use the LaTeX template at the supplied path: {unit.source}"
+            "I'm providing you a template path. "
+            f"Inspect and use the LaTeX template at the supplied path: {unit.source} "
         )
     else:
         raise ValueError(f"Unsupported converter source mode: {unit.mode}")
@@ -199,7 +199,7 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "* If the paper has more content than the template sections calls to fill, do not use the "
         "'not-requested' surplus content; "
         "* If there are fields which are strictly for the venue's staff or reviewers to fill, do not fill them. "
-        "* If the paper has fields beyond the template's supported fields, do not use those paper fields's contents —"
+        "* If the paper has fields beyond the template's supported fields, do not use those paper fields's contents — "
         "__unless__ some or all content of an exceeding field seems to be a sound addition to a non-identical "
         "template field due to the template field ressamble the content in an solid way. "
         "\n"
@@ -208,19 +208,19 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "* to favor the paper field's contents, headers's contents and sections's contents's **over** the template field's contents, headers's contents and sections's contents. "
         "> but there are indeed exceptions, for example: "
         "> when there's no paper content corresponding to a template field, which should not be made up just to fill the template, (then we don't "
-        "cut out this template's content in favor of the paper's themed content)"
-        "> or like when there's paper content beyond what the venue's template calls for, (then we don't favor this paper's exceeding content)" 
+        "cut out this template's content in favor of the paper's themed content) "
+        "> or like when there's paper content beyond what the venue's template calls for, (then we don't favor this paper's exceeding content) " 
         "> or even when the template has a field which content is clearly a placeholder, but should be filled by any author's content since is not "
-        "for the author to fill yet. (then we don't cut this placeholder out in favor of any paper's themed content)" 
+        "for the author to fill yet. (then we don't cut this placeholder out in favor of any paper's themed content) " 
         "> or when the template has a section headings which were only crucial as a matter of __instructions for authors__ — "
         "but not pertinent as a matter of __the paper for submission per se__. (then we don't favor these sections headings and "
         "titles over a paper's section heading or title which could occupy this spot). "
         "\n\n"
         "> These exceptions also means that when the paper's original content is already template-oriented arranged and "
         "it fits the amount of pages range allowed, we drop a whole paper's original section only when there are template's "
-        "mandatory section headings which makes the original paper's sections structurally impossible to retain."
+        "mandatory section headings which makes the original paper's sections structurally impossible to retain. "
         "> And also means you should neither include in the final arranged paper any template's optional sections which "
-        "the authors did not bothered to write content for"
+        "the authors did not bothered to write content for "
         "> nor include sections which are only mandatory after the paper is accepted, not even include their headings/titles. "
         "\n\n"
         "Overall, preserve paragraph wording and terminology exactly and retain all content faithfully. "
