@@ -101,10 +101,15 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
 * Eu recomendo que o mantenedor altere essa instrução pra sempre definir um modelo mais barato e eficiente como o "gpt-5.4-mini".
 > Se não o leitor não é um modelo da OpenAI, a atual instrução é definir "gpt-5.4-mini" como fallback.
 
-#### 2. Resultados são gerados dentro da pasta em que a sua sessão do Claude está aberta:
-* Resultados não são gerados na pasta dos seus papers a não ser que 
-  * a sessão do Claude seja aberta no contexto da pasta dos seus papers,
-  * o Claude entre na pasta dos seus papers e, de dentro dessa pasta, execute a SKILL (e.g. Terminal > `cd <caminho-pra-pasta-papers> && <linha-de-comando-do-programa-da-skill>`)
+#### 2. Resultados são gerados dentro da pasta em que o Claude executa o comando atrelado ao programa da skill:
+Por default, o Claude executa o comando na pasta em que a sessão foi aberta, 
+> mas pode acontecer diferente se o Claude espontaneamente resolver executar o comando dentro de outra pasta.
+
+Você não verá resultados surgindo na pasta que quer, a não ser que o Claude execute o comando na pasta do seu interesse; como por exemplo:
+*  `cd <pasta-dos-papers> && <linha-de-comando-do-programa-da-skill>`
+*  `<linha-de-comando-do-programa-da-skill>` _(default: executa o comando na pasta utilizada na sessão --> gera resultado na pasta da sessão)_
+*  `cd <pasta-do-template> && <linha-de-comando-do-programa-da-skill>`
+> Recomendo que mitiguem a imprevisibilidade para melhorar a experiência de uso.
 
 #### 4. Entre os resultados gerados, há:
 * Resultados do /venue-matcher: `ranking.md` (um ranking de venues que casam com um paper, em ordem decrescente de fit)
