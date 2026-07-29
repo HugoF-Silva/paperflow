@@ -102,8 +102,7 @@ reference style mandatory compliance).
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
 in place. Restore mangled template files by re-extracting them rather than reconstructing them.
 Template files as .cls, .sty, .bst defines the venue's strict layout and are not yours to 
-edit — fix only text you wrote. If the template will not compile because your toolchain lacks
-something it requires, that is a gap in your toolchain, not a defect in the template.
+edit — fix only text you wrote.
 
 4. Write the paper to be compliant to the right targeted venue specific event's LaTeX template, edit
 the `converted/`'s files which are yours to edit, respect user's order so the paper arrangement 
