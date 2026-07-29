@@ -49,7 +49,7 @@ Selecione o repositório e aperte `sync` para sincronizar com o marketplace daqu
 #### Fig. 6
 <img width="320" height="168" alt="image" src="https://github.com/user-attachments/assets/b7dc152d-cff6-445e-ba15-53ea9fcb68fa" />
 
-Meu Claude tá com um bug que aparece os plugins duplicados. Talvez isso aconteça com o seu também, não se assuste, só há 1 plugin `Academia Perks` no parketplace `paperflow`.
+Meu Claude tá com um bug que aparece os plugins duplicados. Talvez isso aconteça com o seu também, não se assuste, só há 1 plugin `Academia Perks` no marketplace `paperflow`.
 
 Você consegue voltar para essa janela a qual foi redirecionado a qualquer momento através de:
 
@@ -69,7 +69,7 @@ Abra o gerenciador de plugin novamente da Fig. 1
 
 Academia perks deve estar na lista. Clique.
 
-#### Fig. 9
+#### Fig. 9 (prints em ordem de leitura ocidental)
 
 <img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/967963c2-f0f4-4420-bbfa-611f073d0992" />
 <img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/a2f6bdfc-f3be-42e5-9337-4e5024dd2423" />
@@ -91,15 +91,20 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
 
 ### ⚠️ Atenção.:
 * Em 2026-07, Codex ainda não está preparado pra usar plugins dessa forma. O plugin ainda não foi publicado por lá e sem um plano business ou enterprise, compartilhar/atualizar plugins "clandestinos" é um processo travado.
-* Você não precisa usar pelo Claude, se você for um dev eu recomendo que você clone o repo e use o Makefile. Se você não tem um ambiente de programação definido na sua máquina, até você conseguir finalmente executar pode ser uma jornada.
-* Eu não testei o uso desse plugin e nem executei os comandos do Makefile num ambiente que não fosse `WSL + Docker Container Linux` ou `WSL + Windows local`; se você optar por outro ambiente, é por sua conta e risco.
+* Você não precisa usar pelo Claude, você pode clonar o repo e usar o Makefile embora a curva de aprendizado pode ser mais íngreme neste caso — principalmente se já não tiver configurado uma IDE e um ambiente de programação.
+  * Eu não testei o uso desse plugin e nem executei os comandos do Makefile num ambiente que não fosse 
+    * `WSL + Docker Container Linux` ou 
+    * `WSL + Windows local`; 
+  * se você optar por outro ambiente, é por sua conta e risco.
 
-#### 1. Se e a UX de plugins do Codex melhorar nos próximos meses e quem mantém esse repositório quiser ajustar o plugin pra rodar liso por lá: 
+
+#### 1. Se e a UX de plugins do Codex melhorar nos próximos meses e quem mantém esse repositório quiser ajustar o plugin pra rodar liso por lá, saiba que: 
 * ⚠️ ambas skills desse plugin instrui o agente leitor a executar um ralph loop por paper,
 * ⚠️ e a skill explicitamente instrui que, se o leitor for um modelo da OpenAI, o leitor deve configurar o ralph loop com um agente cujo id do modelo de linguagem usado seja equivalente a identidade de quem configura.
 * ⚠️ **traduzindo**: se você tá usando GPT 5.6 Sol, será definido GPT 5.6 Sol pra cada ralph loop; o que pode devorar seus créditos.
-* Eu recomendo que o mantenedor altere essa instrução pra sempre definir um modelo mais barato e eficiente como o "gpt-5.4-mini".
-> Se não o leitor não é um modelo da OpenAI, a atual instrução é definir "gpt-5.4-mini" como fallback.
+* Eu recomendo que o mantenedor altere essa instrução pra sempre definir um modelo mais barato e relativamente eficiente como o "gpt-5.4-mini".
+> Se o agente leitor não é um modelo da OpenAI, ele é instruído a definir "gpt-5.4-mini" como fallback.
+
 
 #### 2. Resultados são gerados dentro da pasta em que o Claude executa o comando atrelado ao programa da skill:
 Por default, o Claude executa o comando na pasta em que a sessão foi aberta, 
@@ -111,32 +116,42 @@ Você não verá resultados surgindo na pasta que quer, a não ser que o Claude 
 *  `cd <pasta-do-template> && <linha-de-comando-do-programa-da-skill>`
 > Recomendo que mitiguem a imprevisibilidade para melhorar a experiência de uso.
 
+
 #### 4. Entre os resultados gerados, há:
-* Resultados do /venue-matcher: `ranking.md` (um ranking de venues que casam com um paper, em ordem decrescente de fit)
-* Resultados do /converter: pacote LaTeX do paper convertido para o template da venue mais apropriada (com `.pdf` já compilado dentro)
-* Resultados independentes das skills: `_progress.log` (quantos papers já foram concluídos) e `_execution.log` (o que o agente do ralph loop tá fazendo e falando)
+* Resultados do /venue-matcher:
+  * `ranking.md` (um ranking de venues que casam com um paper, em ordem decrescente de fit)
+* Resultados do /converter:
+  * pacote LaTeX do paper convertido para o template da venue mais apropriada (com `.pdf` já compilado dentro)
+* Resultados independentes das skills:
+  * `_progress.log` (quantos papers já foram concluídos) e
+  * `_execution.log` (o que o agente do ralph loop tá fazendo e falando)
+
 
 #### 3. O `/venue-matcher` não é possível de ser executado individualmente porque, após finalizar, ele majoritariamente executa o `/converter` imediatamente sem que você peça.
 * ⚠️ Então a não ser que você interrompa a execução do `/converter` manualmente, ele será executado.
+
 
 #### 4. Mas você pode executar o `/converter` indiviudalmente:
 * ⚠️ Se você passar uma pasta pro `/converter` com mais de um paper, ele tem alto risco de converter o paper errado.
 * O `/converter` foi propositalmente desenhado para ser usado com 1 paper na pasta quando ele é utilizado individualmente.
 
+
 #### 5. Executar o `/venue-matcher` pra `X` papers não garante encontrar venue pra todos:
 * Pode ser que não tem venue boa aberta pra submeter o paper ou o agente não encontrou.
+
 
 #### 6. Encontrar venue pra quaisquer papers não garante que o `/venue-matcher` ou o `/converter` encontre URL de template LaTeX pra todos:
 * Pode ser que as venues encontradas não aceitam submissão usando LaTeX.
 * ⚠️ A skill só trabalha com conversão de layout se puder usar LaTeX pra formatar o conteúdo do paper.
 
+
 #### 7. Encontrar templates LaTeX pra quaisquer papers não garante que o `/converter` conseguirá usá-los:
 * Pode ser que pra baixar o template de um link, precisa entrar numa conta;
-* ⚠️ o agente não foi construído pra acessar uma conta por você. Você precisará baixar o template e providenciar pro `/converter`
+  * ⚠️ o agente não foi construído pra acessar uma conta por você. Você precisará baixar o template e providenciar pro `/converter`
 * Pode ser que o template LaTeX tá quebrado.
-* ⚠️ Você precisará trocar de venue, porque eles não forneceram um template funcional.
+  * ⚠️ Você precisará trocar de venue, porque eles não forneceram um template funcional.
 * Pode ser que acreditaram ser um template LaTeX, mas não era e o `/converter` não achou o certo.
-* ⚠️ Você precisará procurar pelo link adequado ou trocar de venue.
+  * ⚠️ Você precisará procurar pelo link adequado ou trocar de venue.
 
   
 #### 8. 💡E é por isso que 
