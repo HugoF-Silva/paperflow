@@ -12,8 +12,8 @@ SUMMARY_INSTRUCTION = (
     "In brief bullet points, in en-US, summarize what you have just done in this "
     "pass: what you were looking for, what you found, what you decided and why, "
     "what you fixed, how far along the conversion is, and what still needs to be "
-    "done to ensure that the paper is converted and compliant with the LaTeX "
-    "template required by the venue. No prose, no preamble—just the bullet points."
+    "done to ensure that the paper is converted and compliant with the venue's "
+    "authoritative template. No prose, no preamble—just the bullet points."
 )
 
 
