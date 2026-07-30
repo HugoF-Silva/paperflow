@@ -252,6 +252,24 @@ Pode acontecer mais vezes do que a gente imagina.
 Algumas poucas vezes vi acontecendo este caso:
 * o `/converter` acha que o paper tem mais que o mínimo de páginas necessário pra ser aceito na venue.
 * trata como se o paper fosse normal ao invés de parar a conversão e avisar.
+* o `/converter` ignora o fato de que a venue pediu ORCID de todos os autores e não tem ORCID de todos os autores.
+
+#### E alucinações no geral
+Exemplo:
+* o `/converter` acha que a venue não precisa pagar taxa (provavelmente porque não cruzou com essa info)
+* o `/converter` overthinka e pega outro template 
+
+## Cuidado: o caminho mais curto não é o que você pensa
+Esse é claramente um tipo de aplicação que precisa ser supervisionada.
+Não é só "rodar e largar", ao menos no estado atual.
+Sem discernimento de um humano, há risco de deixar passar detalhes que te fazem submeter um paper que definitivamente será rejeitado, o que contribui pra você perder tempo e energia atoa.
+
+O caminho mais curto com a versão atual é: 
+1. analisar os resultados do agente, 
+2. entender como funciona, 
+3. usar resultado que foi bom, 
+4. executar novamente pra regerar resultados que não prestaram (tendo bom senso sobre quando é hora de parar de tentar)
+5. e complementar qualquer coisa que a venue exigir que o agente não finalizar.
 
  ---
 
