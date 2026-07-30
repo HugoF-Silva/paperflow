@@ -28,53 +28,66 @@ a. ranking.md (w/ URL along ranked venus),
 b. inline chosen venue (w/ URL), 
 c. template local path.
 
+### Important
+For the purposes of these instructions, the **authoritative template** is the **LaTeX** submission template that 
+the targeted venue instance — the exact venue, edition, year, track, workshop, and submission stage where applicable — 
+currently designates or requires for submitted papers.
+
+A template is not authoritative merely because it:
+* is hosted on an official domain;
+* has the same or a similar venue name;
+* belongs to another edition, track, workshop, or sibling event;
+* appears in search results;
+* is a valid and compilable LaTeX package; or
+* follows the same publisher or document class.
+
+#### Its applicability to the targeted venue instance must be established from the context and provenance of the venue's official materials.
+Applicability must be established from official contextual evidence, not inferred from the template's name, technical usability, or search-result proximity.
+
 ## (a) or (b) mode — If the user opted for providing a ranking.md or chose the venue URL:
-The user is never sure whether the URL really points to the downloadable LaTeX template link, 
-the user may had provided a URL which page contains the LaTeX template hyperlink; most of those 
-venues provides other workshops / tracks in pages which shares the same domain i.e. a 
-sibling-event, sometimes  in the same page context, so
+The user is never sure whether the URL really points to the authoritative template's download link, 
+the user may had provided a URL which page contains the authoritative template hyperlink;
 
 1. Identify the targeted venue; in ranking results mode, use only the ranking's top-1 venue.
 2. Verify whether the supplied URL is a real template or a page linking to one.
 3. Verify the venue/track/workshop identity and reject sibling-event templates.
-4. Search closely related official venue pages when the supplied URL isn't neither the LaTeX
-   template itself nor provides content which links directly to the real venue-specific 
-   LaTeX template.
+4. Search closely related official venue pages when the supplied URL isn't neither the authoritative
+   template per se nor provides content which links directly to the targeted venue's authoritative template.
 5. Download the right template into {downloads}. CAUTION!: 
    - Do not mistake instructions for the template.
-   - Instructions are helpful to guide the author (submitter), but they do not replace the LaTeX template.
-6. The user may had provided the wrong URL for the LaTeX template thinking it was from a venue 
+   - Instructions are helpful to guide the author (submitter), but they **don't** replace the authoritative template.
+6. The user may had provided the wrong URL for the authoritative template thinking it was from a venue 
    but it was from a sibling-event, or instructions. So, in order to convert the user's paper,
-   is your duty to go the extra mile only to make sure the downloaded template is the venue-specific 
-   LaTeX template the venue requires submitters to follow.
-7. Return to the venue's official source for missing bare-minimum template files required to use the LaTeX
-   template instead of declaring the template as incomplete at the first hurdle; However, if the missing 
+   is your duty to go the extra mile only to make sure the downloaded template is the authoritative template.
+7. Return to the venue's official source for missing bare-minimum template files required to use a LaTeX
+   template instead of declaring the authoritative template as incomplete at the first hurdle; However, if the missing 
    files are behind an authentication or acess restrictions that you cannot satisfy just emit the block promisse.
-   - A usable template package normally includes, at a minimum, the required .cls and/or .sty files, or even an 
+   - A usable LaTeX template package normally includes, at a minimum, the required .cls and/or .sty files, or even an 
      additional .bst file when the venue mandates a particular bibliography/references style. A sample .tex is 
      useful but not part of the bare minimum; if the very least minimum required files are indeed available 
      while no sample .tex file is provided, create a minimal main.tex.
 
-> **CAUTION!**: If the template is behind a login or otherwise requires account authentication, do not attempt to access 
-it or look for another way to obtain it. Instead, immediately write conversion-status.md, emit {BLOCKED_PROMISE}, 
-and stop. Tell the user that authentication is required, and ask them to download the template and provide it 
-through template-path. It is important to keep in mind that if there's an explicit need to login or the need 
-for permission before you can get your hands on the right LaTeX template, that means whatever other thing you 
-download will NOT be the right template, and you should **not** use the wrong template under no circumstance 
-when converting the paper.
+> **CAUTION!**: If the authoritative template is behind a login or otherwise requires account authentication, 
+do not attempt to access it or look for another way to obtain it. Instead, immediately write conversion-status.md, 
+emit {BLOCKED_PROMISE}, and stop. Tell the user that authentication is required, and ask them to download the 
+template and provide it through template-path. It is important to keep in mind that if there's an explicit need 
+to login or the need for permission before you can get your hands on authoritative template, that means whatever 
+other thing you download will NOT be the authoritative template, and you should **not** use a mistaken template 
+under no circumstance when converting the paper.
 
 ## (c) mode — If the user opted to provide you a template-path:
 1. First verify that the user's supplied path is an extractable archive or usable LaTeX package. A usable 
-   user-supplied path is treated as the right venue template; do not re-search the venue in this case.
+   user-supplied path is treated as the venue's authoritative template right away; do not re-search the venue 
+   in this case.
 
-## Regardless of the mode, after have gotten your hands to the right targeted venue specific event's LaTeX template: 
+## Regardless of the mode, after have gotten your hands to the targeted venue's authoritative template: 
 
 #### Overall:
-* Do **not** create from scratch LaTeX template's very least required files or bare minimum files: if 
-  it turns out the venue really does **neither** provide a package which set of files includes at least 
-  the very least required of a LaTeX standard package **nor even** provide them scattered within venue 
-  domain's pages, it is **not** your duty to code the venue's LaTeX files from scratch if they don't 
-  provide the very least required to work with it.
+* Do **not** create from scratch the authoriative template's very least required files or bare minimum 
+  files: if it turns out the venue really does **neither** provide the authoritative package which set 
+  of files includes at least the very least required of a LaTeX standard package **nor even** provide 
+  them scattered within the venue domain's pages, it is **not** your duty to code the venue's authoritative
+  template LaTeX files from scratch if they don't provide the very least required to use it.
 
 * Use write_file only for file creation or a full rewrite and edit_file for small exact changes. Use 
   run_shell for inspection, extraction, copying, and deletion. After every download or extraction, 
@@ -101,28 +114,28 @@ of times some of those sequence's steps can be repeated, there's only common sen
 extraction of archive members.
    
 2. Based on what the venue materials, or the venue instructions, or even the template instructions, you
-get to know the minimal set of files required to use the mandated LaTeX template, if not clear 
+get to know the minimal set of files required to use the mandated authoritative template, if not clear 
 enough, stick to the fact you cannot proceed with less than the very least required to 
-convert a paper that coplies with a LaTeX template such as .cls and/or .sty, and maybe .bst if 
-a specific reference/bibliography style is mandatory too.
+convert a paper that coplies with a standard LaTeX template such as .cls and/or .sty, and maybe .bst if 
+a specific reference/bibliography style is also strictly required by the venue too.
 
-3. Copy into `converted/` the required LaTeX template package the venue expects you to use. For every 
+3. Copy into `converted/` the targeted venue's authoritative template. For every 
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
 in place. Restore mangled template files by re-extracting them rather than reconstructing them.
 Template files as .cls, .sty, .bst defines the venue's strict layout and are not yours to 
 edit — fix only text you wrote.
 
-4. Write the paper to be compliant to the right targeted venue specific event's LaTeX template, edit
+4. Write the paper to be compliant to the targeted venue's authoritative template, edit
 the `converted/`'s files which are yours to edit, respect user's order so the paper arrangement 
-becomes increasingly aligned with the template layout using what's essential from the paper while 
-preserving wording, language and content but ruling out paper's content which are not supported by the venue.
+becomes increasingly aligned with the authoritative template layout using what's essential from the paper while 
+preserving wording, language and content but ruling out paper's content which are not supported by the venue's authoritative template.
 
-5. Re-check every mandatory venue structure and compile with the compile tool before making any promise. Never
-claim success from plausible LaTeX text or partial compliance. A compile whose overfull field is not
-empty, or a PDF with content printed outside the text block — usually a table wider than the
-column, an oversized figure, or text that cannot break — is unfinished work: fix **what you authored** at 
-the reported lines and recompile until the only ones left are entries you have inspected 
-and confirmed they came from the template's own files rather than from content you wrote.
+5. Re-check every mandatory venues's authoritative template structure and compile with the compile tool 
+before making any promise. Never claim success from plausible LaTeX text or partial compliance. A compile 
+whose overfull field is not empty, or a PDF with content printed outside the text block — usually a table 
+wider than the column, an oversized figure, or text that cannot break — is unfinished work: fix **what you 
+authored** at the reported lines and recompile until the only ones left are entries you have inspected and 
+confirmed they came from the authoritative template's own files rather than from content you wrote.
 
 The line an overfull entry names is where TeX finished the box, not where the markup that caused it lives, 
 so usually an entry landing on things like \\end{{...}} or on a line carrying no prose is often emitted 
@@ -134,24 +147,24 @@ You must emit either `{COMPLETE_PROMISE}` or `{BLOCKED_PROMISE}`, and which one 
 Emit {COMPLETE_PROMISE} only after **all** all of the following have been ensured: 
 - [ ] ensuring the text fits within its boundaries, and
 - [ ] verifying that all mandatory sections and front matter are present, and
-- [ ] confirming the targeted venue's LaTeX template provided at least a .cls and/or .sty files and you weren't who made it from scratch, and
-- [ ] verifying every mandatory template requirement is met, and
+- [ ] confirming the targeted venue's authoritative template provided at least a .cls and/or .sty files and you weren't who made it from scratch, and
+- [ ] verifying every mandatory authoritative template requirement is met, and
 - [ ] confirming that converted/main.tex exists beside a non-empty converted/main.pdf, and
 - [ ] confirming the converted paper's new arrangement and language actually mirrors the original content while 
-      conforming to the venue's LaTeX template layout and requirements and — if the venue has any mandatory 
-      paper-related requirements or instructions that are not encoded in the template — confirming that the 
+      conforming to the venue's authoritative template layout and requirements and — if the venue has any mandatory 
+      paper-related requirements or instructions that are not encoded in the authoritative template — confirming that the 
       converted paper also complies with those mandatory paper-related pre-submission requirements or instructions.
       
 Emit {BLOCKED_PROMISE} immediately when at least one of the following conditions occurs. Before emitting it, 
 ensure that conversion-status.md has been written with the verified reason for blocking; emitting the 
 promise alone is not sufficient.
-* no venue-specific LaTeX template exists after thorough venue-accurate search; or 
-* a found template cannot be downloaded; or
+* no authoritative template exists after thorough targeted venue-accurate search; or 
+* the authoritative template cannot be downloaded; or
 * a user-provided template path is missing, corrupt, non-LaTeX, or unusable; or
-* the targeted venue-specific LaTeX template is behind a login or otherwise requires account auth; or
-* a downloaded template is incomplete and the missing required pieces cannot be recovered from the venue source; or
-* the paper cannot meet a mandatory minimum page count without inventing content; or
-* the template is intact but cannot be compiled without damaging the venue's intended strict layout. 
+* the targeted venue's authoritative template is behind a login or otherwise requires account auth; or
+* the authoritative template is incomplete and the missing required pieces cannot be recovered from the targeted venue's source; or
+* the paper cannot meet a mandatory minimum page count without you inventing content for it first; or
+* the authoritative template is intact but cannot be compiled without damaging the venue's intended strict style/layout for it. 
 
 **Do not use the blocked promise for any other difficulty**.
 
@@ -163,25 +176,27 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         source_instruction = (
             "I'm providing you a ranking.md. "
             "Use the top-1 venue's LaTeX template URL/evidence from the mapped "
-            f"ranking.md at {unit.source}, and verify the true venue template. "
+            f"ranking.md at {unit.source}, I'm not sure whether the top ranked indeed points"
+            "to the top venue's authoritative template, I think it is. But please inspect and confirm the "
+            "top-1 venue's authoritative template. If indeed is, use it."
         )
     elif unit.mode == "chosen-venue":
         source_instruction = (
             "I'm providing you an URL regarding template of the venue I chose. At least is what "
-            "I think it seems to be their template. I'm not sure though, inspect, and if indeed is, use it. "
-            "Download and verify the strict venue LaTeX template described in this "
+            "I think it seems to be their authoritative template. I'm not sure though, inspect, and if "
+            "indeed is, use it. Download and verify the venue's authoritative template described in this "
             f"chosen-venue paragraph: {unit.source} "
         )
     elif unit.mode == "template-path":
         source_instruction = (
-            "I'm providing you a template path. "
-            f"Inspect and use the LaTeX template at the supplied path: {unit.source} "
+            "I'm providing you a template path for a template. It is the authoritative template already."
+            f"Inspect and use the authoritative template at the supplied path: {unit.source} "
         )
     else:
         raise ValueError(f"Unsupported converter source mode: {unit.mode}")
 
     strict_conversion_order = (
-        "Convert the paper to 100% of the venue's mandatory LaTeX template "
+        "Convert the paper to 100% of the venue's authoritative template "
         "requirements, this means ensuring the paper structure is compliant to "
         "a LaTeX template package. Keep the paper's original language regardless of the "
         "order or search language. Templates are like fields with placeholders: they allow "
@@ -233,7 +248,7 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "only material outside the paper's main point if still necessary. If authors wrote "
         "content for template's optional sections, cut them out in case the paper exceeds "
         "mandatory page limit. Never claim success at partial compliance. Re-check every "
-        "mandatory structural requirement and compile before making any promise."
+        "mandatory structural requirement from the authoritative template (and from the targeted venue's instructions if any) and compile before making any promise."
     )
     return f"{source_instruction}\n\n{strict_conversion_order}\n\n---\nPAPER CONTENT:\n{paper_text}"
 
