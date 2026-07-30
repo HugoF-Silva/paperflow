@@ -246,13 +246,12 @@ def _response_input_items(response) -> list[dict]:
                 "type": "function_call_output",
                 "call_id": item["call_id"],
                 "output": (
-                    "Your attempt to make a tool call/function call was not executed: it reached its "
-                    "token limit while writing this call's argument — too much information in a single "
+                    "[TOOL CALL FAILED]: Your attempt to make a tool call was not executed: it reached its "
+                    "token limit while writing this call's argument — there was too much information in a single "
                     "call attempt. if you need to make this call as-is anyway, "
-                    "why don't you split it if possible? If possible, just split it: write/edit a part, see "
-                    "the result by reading it, then edit with the lacking part. If not possible to "
-                    "do it piece by piece without losing the significance of it, the sensible move might "
-                    "be to call something else. "
+                    "why don't you split it if that's possible? If you can, just break your calls in smaller steps."
+                    "But if is indeed not possible to split it piece by piece without losing the significance of it,"
+                    "the sensible move might be call something else."
                 ),
             }
             for item in items
