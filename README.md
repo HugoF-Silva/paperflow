@@ -110,7 +110,7 @@ Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que ir�
   * se você optar por outro ambiente, é por sua conta e risco.
 
 
-#### 1. Se e a UX de plugins do Codex melhorar nos próximos meses e quem mantém esse repositório quiser ajustar o plugin pra rodar liso por lá, saiba que: 
+#### 1. Se a UX de plugins do Codex melhorar nos próximos meses e quem mantém esse repositório quiser ajustar o plugin pra rodar liso por lá, saiba que: 
 * ⚠️ ambas skills desse plugin instrui o agente leitor a executar um ralph loop por paper,
 * ⚠️ e a skill explicitamente instrui que, se o leitor for um modelo da OpenAI, o leitor deve configurar o ralph loop com um agente cujo id do modelo de linguagem usado seja equivalente a identidade de quem configura.
 * ⚠️ **traduzindo**: se você tá usando GPT 5.6 Sol, será definido GPT 5.6 Sol pra cada ralph loop; o que pode devorar seus créditos.
