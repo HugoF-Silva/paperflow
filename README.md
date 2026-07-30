@@ -30,6 +30,24 @@ Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
 > da máquina, e precisa rodar em segundo plano; algo que você só conseguirá numa máquina a qual você tem autonomia pra definir isso.
 > Sites baseados em IA (e.g. claude.ai, chatgpt.com) normalmente não te dão essa autonomia e por padrão não permitem que uma execução de um comando continue por tanto tempo.
 
+#### 🚨 Cuidado: o caminho mais curto não é o que você pensa!
+Esse é claramente um tipo de aplicação que precisa ser supervisionada por alguém que sabe tudo que a venue demanda como obrigatório.
+
+Não é só "colocar pra rodar e largar" na expectativa de que todos os resultados sairão sempre coerentes; ao menos não no estado atual.
+##### ✅ A conversão até funciona com relativa consistência, 🚫 mas a automatização tem dificuldade em julgar qual template ela deveria converter o paper quando não é explicitamente apontado 👎🏻
+Sem discernimento de um humano, há risco de deixar passar enganos que te fazem submeter um paper que definitivamente será rejeitado, o que contribui pra você perder tempo e energia atoa.
+
+O caminho mais curto com a versão atual é: 
+1. analisar os resultados do agente, 
+2. entender como o sistema funciona, 
+3. ver o que a venue alvo demanda como obrigatório e ver se o resultado atendeu todos os requisitos,
+4. usar apenas resultados que estão em conformidade com o que a venue aponta como obrigatório,
+5. executar a automatização isoladamente para papers que levaram a resultados enganadores 
+   * _tendo bom senso sobre quando é hora de parar de insistir, "pegar na mão" do agente e facilitar pra ele_
+6. entregar o template de "mão beijada" pro agente quando possível e executar o `/converter` individualmente,
+7. e complementar qualquer informação da etapa de submissão que a venue exige mas está fora do escopo do agente 
+   * _(e.g. cover letters, submeter de fato com devidas infos sobre autores, monitorar emails atrelados às avaliações, etc)_
+
 ### Como add o plugin no seu Claude
 
 #### Fig. 1
@@ -258,18 +276,6 @@ Algumas poucas vezes vi acontecendo este caso:
 Exemplo:
 * o `/converter` acha que a venue não precisa pagar taxa (provavelmente porque não cruzou com essa info)
 * o `/converter` overthinka e pega outro template 
-
-## Cuidado: o caminho mais curto não é o que você pensa
-Esse é claramente um tipo de aplicação que precisa ser supervisionada.
-Não é só "rodar e largar", ao menos no estado atual.
-Sem discernimento de um humano, há risco de deixar passar detalhes que te fazem submeter um paper que definitivamente será rejeitado, o que contribui pra você perder tempo e energia atoa.
-
-O caminho mais curto com a versão atual é: 
-1. analisar os resultados do agente, 
-2. entender como funciona, 
-3. usar resultado que foi bom, 
-4. executar novamente pra regerar resultados que não prestaram (tendo bom senso sobre quando é hora de parar de tentar)
-5. e complementar qualquer coisa que a venue exigir que o agente não finalizar.
 
  ---
 
