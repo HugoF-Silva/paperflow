@@ -59,7 +59,7 @@ sibling-event, sometimes  in the same page context, so
 1. First verify that the user's supplied path is an extractable archive or usable LaTeX package. A usable 
    user-supplied path is treated as the right venue template; do not re-search the venue in this case.
 
-## Regardless of the mode, after gotting your hands to the right targeted venue specific event's LaTeX template: 
+## Regardless of the mode, after have gotten your hands to the right targeted venue specific event's LaTeX template: 
 
 #### Overall:
 * Do **not** create from scratch LaTeX template's very least required files or bare minimum files: if 
@@ -96,7 +96,9 @@ extraction of archive members.
 get to know the minimal set of files required to work with the mandated LaTeX template, if not clear 
 enough, stick to the fact you can't proceed with conversion with less than the very least required to 
 convert a paper into a LaTeX template-compliant paper (.cls and/or .sty, and maybe .bst depending on 
-reference style mandatory compliance).
+reference style mandatory compliance). If the template will not compile because you forgot to write/edit
+something it requires, that is a gap on how you are ensuring required elements are used, or you are 
+missing something you have not yet been able your finger on, but it is not a defect in the template.
 
 3. Copy into `converted/` the required LaTeX template package the venue expects you to use. For every 
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
