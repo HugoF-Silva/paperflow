@@ -34,10 +34,15 @@ Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
 Esse é claramente um tipo de aplicação que precisa ser supervisionada por alguém que sabe tudo que a venue demanda como obrigatório.
 
 Não é só "colocar pra rodar e largar" na expectativa de que todos os resultados sairão sempre coerentes; ao menos não no estado atual.
-#### ✅ A conversão até funciona com relativa consistência, 🚫 mas a automatização tem dificuldade em julgar qual template ela deveria converter o paper quando não é explicitamente apontado 👎🏻
-Sem discernimento de um humano, há risco de deixar passar enganos que te fazem submeter um paper que definitivamente será rejeitado, o que contribui pra você perder tempo e energia atoa.
+#### ✅ A conversão até funciona com relativa consistência, 🚫 mas a automatização tem dificuldade em julgar qual template ela deveria converter o paper quando não é explicitamente fornecido como arquivo 👎🏻
+Sem discernimento de um humano, há risco de deixar passar batido julgamentos e premissas infundadas do agente as quais:
+* 🅰️ ou levaram à converter um paper para uma venue que nunca o aceitaria independente,
+* 🅱️ ou levaram à converter um paper para um template que não é o qual a venue espera,
 
-O caminho mais curto com a versão atual é: 
+Independente se 🅰️ ou 🅱️:
+* definitivamente levará o paper a ser rejeitado, e contribui pra você perder tempo e energia atoa.
+
+O caminho "feliz" mais curto com a versão atual da automatização é: 
 1. analisar os resultados do agente, 
 2. entender como o sistema funciona, 
 3. ver o que a venue alvo demanda como obrigatório e ver se o resultado atendeu todos os requisitos,
@@ -48,7 +53,7 @@ O caminho mais curto com a versão atual é:
 7. e complementar qualquer informação da etapa de submissão que a venue exige mas está fora do escopo do agente 
    * _(e.g. cover letters, submeter de fato com devidas infos sobre autores, monitorar emails atrelados às avaliações, etc)_
 
-## Como add o plugin no seu Claude
+## Como add o plugin no seu Claude?
 
 #### Fig. 1
 <img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/b77a8580-13e0-4f17-980c-7e99cbd48073" />
