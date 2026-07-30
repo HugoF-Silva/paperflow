@@ -104,8 +104,7 @@ extraction of archive members.
 get to know the minimal set of files required to use the mandated LaTeX template, if not clear 
 enough, stick to the fact you cannot proceed with less than the very least required to 
 convert a paper that coplies with a LaTeX template such as .cls and/or .sty, and maybe .bst if 
-a specific reference/bibliography style is mandatory too. If the template will not compile because your 
-toolchain lacks something it requires, that is a gap in your toolchain, not a defect in the template.
+a specific reference/bibliography style is mandatory too.
 
 3. Copy into `converted/` the required LaTeX template package the venue expects you to use. For every 
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
