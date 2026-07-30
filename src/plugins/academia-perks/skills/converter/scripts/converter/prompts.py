@@ -54,7 +54,15 @@ sibling-event, sometimes  in the same page context, so
    - A usable package normally has as bare-minimum a .cls and/or .sty files, or even an additional .bst 
      file when the venue instructs a reference style is mandatory. A sample .tex is useful but not bare
      minimum; if the very least required files are available but .tex is absent, create the minimal main.tex.
-     
+
+> **CAUTION!**: If the template is behind a login or otherwise requires account authentication, do not attempt to access 
+it or look for another way to obtain it. Instead, immediately write conversion-status.md, emit {BLOCKED_PROMISE}, 
+and stop. Tell the user that authentication is required, and ask them to download the template and provide it 
+through template-path. It is important to keep in mind that if there's an explicit need to login or the need 
+for permission before you can get your hands on the right LaTeX template, that means whatever other thing you 
+download will NOT be the right template, and you should **not** use the wrong template under no circumstance 
+when converting the paper.
+
 ## (c) mode — If the user opted to provide you a template-path:
 1. First verify that the user's supplied path is an extractable archive or usable LaTeX package. A usable 
    user-supplied path is treated as the right venue template; do not re-search the venue in this case.
@@ -92,12 +100,12 @@ of times some of those sequence's steps can be repeated, there's only common sen
 1. Verify whether the usable template is extractable, extract every archive member instead of selectively 
 extraction of archive members.
    
-2. Based on what the venue provides or the venue instructions or even the template instructions, you
-get to know the minimal set of files required to work with the mandated LaTeX template, if not clear 
-enough, stick to the fact you can't proceed with conversion with less than the very least required to 
-convert a paper into a LaTeX template-compliant paper (.cls and/or .sty, and maybe .bst depending on 
-reference style mandatory compliance). If the template will not compile because your toolchain lacks
-something it requires, that is a gap in your toolchain, not a defect in the template.
+2. Based on what the venue materials, or the venue instructions, or even the template instructions, you
+get to know the minimal set of files required to use the mandated LaTeX template, if not clear 
+enough, stick to the fact you cannot proceed with less than the very least required to 
+convert a paper that coplies with a LaTeX template such as .cls and/or .sty, and maybe .bst if 
+a specific reference/bibliography style is mandatory too. If the template will not compile because your 
+toolchain lacks something it requires, that is a gap in your toolchain, not a defect in the template.
 
 3. Copy into `converted/` the required LaTeX template package the venue expects you to use. For every 
 initiated copy, use that copy as the source for the final submission tree. Fix text you wrote 
@@ -122,35 +130,32 @@ so usually an entry landing on things like \\end{{...}} or on a line carrying no
 by the template's own class rather than by anything you wrote.
 
 #### To finish your work:
+You must emit either `{COMPLETE_PROMISE}` or `{BLOCKED_PROMISE}`, and which one to emit depends on the criterias below.
 
-Emit {COMPLETE_PROMISE} only after **all** of these things are ensured: 
-* ensuring the text fit within its boundaries, 
-* verifying every mandatory template requirement is met, 
-* confirming that converted/main.tex exists beside a non-empty converted/main.pdf, 
-* confirming the converted paper's new arrangement and language actually mirrors the original content but 
-  ensuring it corresponds the venue's LaTeX template layout and requirements and — if there are any 
-  __not-template-confined__ venue's mandatory requirements and/or instructions for papers to be submmited 
-  to the targeted event — confirming the converted paper indeed complies to those venue's mandatory 
-  pre-submission requirements and/or instructions.
-
-Emit {BLOCKED_PROMISE} immediately only after **at least one** of the following things happen — also remember to ensure the conversion-status.md is writen with the verified reason to block aside from saying/emitting the promise: 
-* no venue-specific LaTeX template exists after thorough venue-accurate search; 
-* a found template cannot be downloaded; 
-* a user-provided template path is missing, corrupt, non-LaTeX, or unusable; 
-* the targeted venue-specific LaTeX template is locked behind an account auth; 
-* a downloaded template is incomplete and missing required pieces cannot be recovered from the venue source; 
-* the paper cannot meet a mandatory minimum page count without inventing content; 
+Emit {COMPLETE_PROMISE} only after **all** all of the following have been ensured: 
+- [ ] ensuring the text fits within its boundaries, and
+- [ ] verifying that all mandatory sections and front matter are present, and
+- [ ] confirming the targeted venue's LaTeX template provided at least a .cls and/or .sty files and you weren't who made it from scratch, and
+- [ ] verifying every mandatory template requirement is met, and
+- [ ] confirming that converted/main.tex exists beside a non-empty converted/main.pdf, and
+- [ ] confirming the converted paper's new arrangement and language actually mirrors the original content while 
+      conforming to the venue's LaTeX template layout and requirements and — if the venue has any mandatory 
+      paper-related requirements or instructions that are not encoded in the template — confirming that the 
+      converted paper also complies with those mandatory paper-related pre-submission requirements or instructions.
+      
+Emit {BLOCKED_PROMISE} immediately when at least one of the following conditions occurs. Before emitting it, 
+ensure that conversion-status.md has been written with the verified reason for blocking; emitting the 
+promise alone is not sufficient.
+* no venue-specific LaTeX template exists after thorough venue-accurate search; or 
+* a found template cannot be downloaded; or
+* a user-provided template path is missing, corrupt, non-LaTeX, or unusable; or
+* the targeted venue-specific LaTeX template is behind a login or otherwise requires account auth; or
+* a downloaded template is incomplete and the missing required pieces cannot be recovered from the venue source; or
+* the paper cannot meet a mandatory minimum page count without inventing content; or
 * the template is intact but cannot be compiled without damaging the venue's intended strict layout. 
 
 **Do not use the blocked promise for any other difficulty**.
 
-In case the template is locked behind an account login / auth, do neither even try it nor try to find other 
-way to get the template in this case, just write the conversion-status.md and abort by emitting {BLOCKED_PROMISE} 
-immediately, use this as opportunity to specify to the user the need for account authentication: ask them 
-to download the template and provide it as template-path. It is important to keep in mind that if there's 
-an explicit need to login or the need for permission before you can get your hands to the right LaTeX 
-template, that means whatever other thing you download will NOT be the right template, and you should 
-**not** use the wrong template under no circumstance when converting the paper.
 """
 
 
@@ -182,7 +187,7 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "a LaTeX template package. Keep the paper's original language regardless of the "
         "order or search language. Templates are like fields with placeholders: they allow "
         "you to __fill the holes__ e.g. "
-        "* fill headers's schema with authors header's contents, "
+        "* fill front matter's schema with authors front matter's contents, "
         "* replace inapplicable section headings with essential section's headings, "
         "* fill sections with research accounts and findings, even splitting some in component subsections when there is too much content crammed for the section, "
         "* fill footnotes with authors footnotes's content, "
@@ -204,8 +209,8 @@ def build_user_order(unit: WorkUnit, paper_text: str) -> str:
         "template field due to the template field ressamble the content in an solid way. "
         "\n"
         "The rule of thumb is — when arranging the paper to match the template layout: "
-        "* to favor template fields's names, headers's schema and sections's headings **over** the paper fields's names, headers's schema and sections's headings but "
-        "* to favor the paper field's contents, headers's contents and sections's contents's **over** the template field's contents, headers's contents and sections's contents. "
+        "* to favor template fields's names, front matter's schema and sections's headings **over** the paper fields's names, front matter's schema and sections's headings but "
+        "* to favor the paper field's contents, front matter's contents and sections's contents's **over** the template field's contents, front matter's contents and sections's contents. "
         "> but there are indeed exceptions, for example: "
         "> when there's no paper content corresponding to a template field, which should not be made up just to fill the template, (then we don't "
         "cut out this template's content in favor of the paper's themed content) "
