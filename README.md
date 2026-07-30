@@ -10,7 +10,7 @@ Em 2026-07,
 - [x] Suporta apenas conversão pra LaTeX.
 - [x] Depende da uma chave de API da OpenAI.
 
-### Ressalvas
+## Ressalvas
 
 As SKILLS foram arquitetadas para serem executadas em websites (e.g. claude.ai / chatgpt.com) mas eles não as suportavam.
 É possível executá-las no aplicativo baixado (e,g. Claude Desktop / Codex Desktop), mas podem haver falhas imprevisíveis 
@@ -30,11 +30,11 @@ Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
 > da máquina, e precisa rodar em segundo plano; algo que você só conseguirá numa máquina a qual você tem autonomia pra definir isso.
 > Sites baseados em IA (e.g. claude.ai, chatgpt.com) normalmente não te dão essa autonomia e por padrão não permitem que uma execução de um comando continue por tanto tempo.
 
-#### 🚨 Cuidado: o caminho mais curto não é o que você pensa!
+### 🚨 Cuidado: o caminho mais curto não é o que você pensa!
 Esse é claramente um tipo de aplicação que precisa ser supervisionada por alguém que sabe tudo que a venue demanda como obrigatório.
 
 Não é só "colocar pra rodar e largar" na expectativa de que todos os resultados sairão sempre coerentes; ao menos não no estado atual.
-##### ✅ A conversão até funciona com relativa consistência, 🚫 mas a automatização tem dificuldade em julgar qual template ela deveria converter o paper quando não é explicitamente apontado 👎🏻
+#### ✅ A conversão até funciona com relativa consistência, 🚫 mas a automatização tem dificuldade em julgar qual template ela deveria converter o paper quando não é explicitamente apontado 👎🏻
 Sem discernimento de um humano, há risco de deixar passar enganos que te fazem submeter um paper que definitivamente será rejeitado, o que contribui pra você perder tempo e energia atoa.
 
 O caminho mais curto com a versão atual é: 
@@ -48,7 +48,7 @@ O caminho mais curto com a versão atual é:
 7. e complementar qualquer informação da etapa de submissão que a venue exige mas está fora do escopo do agente 
    * _(e.g. cover letters, submeter de fato com devidas infos sobre autores, monitorar emails atrelados às avaliações, etc)_
 
-### Como add o plugin no seu Claude
+## Como add o plugin no seu Claude
 
 #### Fig. 1
 <img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/b77a8580-13e0-4f17-980c-7e99cbd48073" />
@@ -119,7 +119,7 @@ Recomendo que caso saiba que houve aumento no número da versão, volte na janel
 
 Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que irá converter.
 
-### ⚠️ Atenção.:
+## ⚠️ Atenção.:
 * Em 2026-07, Codex ainda não está preparado pra usar plugins dessa forma. O plugin ainda não foi publicado por lá e sem um plano business ou enterprise, compartilhar/atualizar plugins "clandestinos" é um processo travado.
 * Você não precisa usar pelo Claude, você pode clonar o repo e usar o Makefile embora a curva de aprendizado pode ser mais íngreme neste caso — principalmente se já não tiver configurado uma IDE e um ambiente de programação.
   * Eu não testei o uso desse plugin e nem executei os comandos do Makefile num ambiente que não fosse 
@@ -193,7 +193,7 @@ o `/converter` existe separado e, quando utilizado individualmente, foi desenhad
 
 💡Assim você consegue `/converter` sem precisar ranquear venues novamente.
 
-### 🚨 Bugs conhecidos 🪳
+## 🚨 Bugs conhecidos 🪳
 
 #### Trava antes de começar (imprevisível — de PC pra PC)
 Em um ambiente problemático — por exemplo, com o Python 3.13 sendo executado no Windows, 
