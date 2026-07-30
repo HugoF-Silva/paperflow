@@ -10,6 +10,18 @@ Em 2026-07,
 - [x] Suporta apenas conversão pra LaTeX.
 - [x] Depende da uma chave de API da OpenAI.
 
+### Ressalvas
+
+As SKILLS foram arquitetadas para serem executadas em websites (e.g. claude.ai / chatgpt.com) mas eles não as suportavam.
+É possível executá-las no aplicativo baixado (e,g. Claude Desktop / Codex Desktop), mas podem haver falhas imprevisíveis 
+pois não são executadas num ambiente isolado já que tais aplicativos — por padrão — usam o seu computador como o ambiente 
+para executar as SKILLS; o que pode vir a ser um problema já que o que funciona no ambiente do seu computador não 
+significa que é o que funciona no ambiente do computador do autor.
+
+Caso não funcione no seu computador, recomenda-se:
+- Um programador para resolver a situação, ou
+- Pedir pra alguma IA te ajudar a executar pelo Makefile, já que os comandos deste isolam o ambiente de execução.
+
 Se você prefere utilizar esse plugin através de um produto digital baseado em agentes de IA, 
 você precisará de ao menos uma conta no GitHub e recomendo que tenha Claude Desktop instalado na sua máquina.
 Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
@@ -17,6 +29,8 @@ Você precisará de acesso ao modo Claude Code (2026-07 isso exige plano pago).
 > Isso se dá pelo fato de que essa skill depende de uma linha de comando a qual pode levar horas de execução a depender da quantidade de papers ou do processamento
 > da máquina, e precisa rodar em segundo plano; algo que você só conseguirá numa máquina a qual você tem autonomia pra definir isso.
 > Sites baseados em IA (e.g. claude.ai, chatgpt.com) normalmente não te dão essa autonomia e por padrão não permitem que uma execução de um comando continue por tanto tempo.
+
+### Como add o plugin no seu Claude
 
 #### Fig. 1
 <img width="320" height="169" alt="image" src="https://github.com/user-attachments/assets/b77a8580-13e0-4f17-980c-7e99cbd48073" />
@@ -86,8 +100,6 @@ Recomendo que caso saiba que houve aumento no número da versão, volte na janel
 <img width="269" height="195" alt="image" src="https://github.com/user-attachments/assets/317d64cc-2d68-4fa1-ab78-e38224d6abad" />
 
 Recomendo que abra a sessão do Claude em uma pasta a qual tem os papers que irá converter.
-
----
 
 ### ⚠️ Atenção.:
 * Em 2026-07, Codex ainda não está preparado pra usar plugins dessa forma. O plugin ainda não foi publicado por lá e sem um plano business ou enterprise, compartilhar/atualizar plugins "clandestinos" é um processo travado.
@@ -163,9 +175,85 @@ o `/converter` existe separado e, quando utilizado individualmente, foi desenhad
 
 💡Assim você consegue `/converter` sem precisar ranquear venues novamente.
 
+### 🚨 Bugs conhecidos 🪳
 
----
+#### Trava antes de começar (imprevisível — de PC pra PC)
+Em um ambiente problemático — por exemplo, com o Python 3.13 sendo executado no Windows, 
+um firewall filtrando o tráfego de 127.0.0.1 e sem suporte nativo a socketpair —, o 
+Python pode ficar travado em um handshake incompleto de um socketpair pela interface de 
+loopback sempre que uma linha com asyncio.run é chamada. 
 
+Trata-se de um problema do ambiente, mas isso é também indício de que a própria SKILL 
+— se usada por meio do Claude — poderá ser executada de forma mais estável em um ambiente 
+isolado o qual tenha sido arquiteturado especialmente para a execução do Python atrelado a ela. 
+
+Ao usar o Makefile, a execução já ocorre em um container Docker baseado em Linux, portanto, 
+até onde sei, esse problema não deveria acontecer se rodar através do Makefile (ao menos 
+eu nunca vi acontecer neste caso).
+
+#### Desiste fácil (volta e meia ocorre)
+O agente interno de ambas as skills podem deixar de cumprir com o necessário 
+pra alcançar o objetivo — i.e. desiste num problema que caso se empenhasse só + um 
+pouco, resolvia — embora aconteça de forma mais variada com o `/converter`. Ex. de empecilhos:
+* fonte do texto é requisito, mas o `/converter` viu que não tá instalada no PC;
+* o `/converter` viu que caminho do arquivo tá no formato do Windows `C:\caminho\do\file` enquanto
+o ambiente dele usa o formato POSIX (Linux/Mac) `/mnt/c/caminho/do/file`;
+* o `/venue-matcher` não encontrou uma venue que servisse pro paper durante o websearch dele.
+
+⚠️ Atenção: é uma faca de dois gumes — incentivá-lo a dar mais do sangue é também aumentar as chances de 
+cruzar pontos que não tem volta. Ex. de riscos: 
+* o `/converter` vê que o template tá errado, faz mudanças no template só pra compilar,
+mas acaba mexendo no que precisava ser seguido a risca pra submissão ser aceita,
+* o `/converter` vê que falta um arquivo essencial pro template funcionar, cria do zero
+um que deveria ter sido fornecido pela venue ao invés de gerado (ocorre pra muitos papers).
+
+#### Vai longe demais (volta e meia ocorre)
+Se provido ao `/converter` a URL de um template que exige login, o `/converter` pode 
+crawlar alguns hyperlinks nas URLs que ele tem acesso, e acabar pensando que o hyperlink 
+de um template similar — o qual não precisa de login — é o que ele deveria usar.
+
+⚠️ Atenção: Isso não é de todo ruim, já que que algumas poucas vezes ele — de alguma 
+forma — acha o link para download direto do template por mais que tenha restrição de acesso.
+
+#### Usa o template errado (volta e meia ocorre)
+O `/converter` fica confuso achando que a URL do template providenciada pelo `/venue-matcher`
+é de fato o template da venue que estamos usando de alvo para conversão do paper;
+
+⚠️ Atenção: Alguém poderia pensar que é o `/venue-matcher` o problemático, já que foi ele 
+que passou uma URL atrelada a um template que não é nosso alvo e ainda afirmou com toda 
+certeza do mundo que era de fato o template correto. 
+* Mas esse comportamento é esperado: afinal não é responsabilidade do `/venue-matcher`
+achar o template certo para toda e cadavenue,
+* O dever dele é outro: ranqueá-las de acordo com as características do paper.
+* Na verdade, hoje o dever de verificar e achar o link certo independente do link
+entregue estar errado está centrado totalmente no `/converter`.
+  * Mas de fato, isso tá deixando o `/converter` confuso mesmo assim.
+
+#### Alucinação de ID (ocorre poucas vezes)
+O gpt-5.4-mini, atual modelo default para os agentes internos do plugin, as vezes 
+erra uma letra no meio do ID. 
+
+A etapa do processo na qual simultaneamente:
+* é consideravelmente crítica, e
+* há possibilidade do usuário interceder (human-in-the-loop)
+
+é quando ocorre entre o `/venue-matcher` e o `/converter` a repassagem automática das URLs atreladas à venue alvo.
+* ⚠️ Pode ser que alguma das URLs tenha um erro de caractére escondido.
+
+Enquanto você não arrumar a causa raiz do erro e nem mudar para um modelo que alucina menos com IDs:
+* Você pode corrigir manualmente essas URLs no `/results/ranking.md` (de lá que são pegas).
+* É só abrir uma que tá funcionando do top-1 do ranking, e no site dessa achar a outra escrita corretamente (pra que você possa arrumar no ranking.md)
+  * em seguida é só rodar o `/converter` de novo.
+ 
+#### Acha que a coversão do paper atende a venue (imprevisível)
+Você precisa saber o que a venue pede e como o template deveria ser pra saber se a conversão atendeu ou não.
+Pode acontecer mais vezes do que a gente imagina.
+
+Algumas poucas vezes vi acontecendo este caso:
+* o `/converter` acha que o paper tem mais que o mínimo de páginas necessário pra ser aceito na venue.
+* trata como se o paper fosse normal ao invés de parar a conversão e avisar.
+
+ ---
 
 # Paperflow — Academia Perks
 
