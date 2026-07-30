@@ -227,7 +227,7 @@ achar o template certo para toda e cadavenue,
 * O dever dele é outro: ranqueá-las de acordo com as características do paper.
 * Na verdade, hoje o dever de verificar e achar o link certo independente do link
 entregue estar errado está centrado totalmente no `/converter`.
-  * Mas de fato, isso tá deixando o `/converter` confuso mesmo assim.
+  * Mas independente, de fato isso tá deixando o `/converter` confuso.
 
 #### Alucinação de ID (ocorre poucas vezes)
 O gpt-5.4-mini, atual modelo default para os agentes internos do plugin, as vezes 
