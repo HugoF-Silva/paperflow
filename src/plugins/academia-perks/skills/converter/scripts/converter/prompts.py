@@ -47,13 +47,13 @@ sibling-event, sometimes  in the same page context, so
    but it was from a sibling-event, or instructions. So, in order to convert the user's paper,
    is your duty to go the extra mile only to make sure the downloaded template is the venue-specific 
    LaTeX template the venue requires submitters to follow.
-7. Return to the venue source for missing bare-minimum template files required to work with a LaTeX
-   template instead of declaring the template as incomplete at the first hurdle; but in case it is missing 
-   due to due to being locked behind an authentication / acess permission you don't have 
-   access, just emit block promisse.
-   - A usable package normally has as bare-minimum a .cls and/or .sty files, or even an additional .bst 
-     file when the venue instructs a reference style is mandatory. A sample .tex is useful but not bare
-     minimum; if the very least required files are available but .tex is absent, create the minimal main.tex.
+7. Return to the venue's official source for missing bare-minimum template files required to use the LaTeX
+   template instead of declaring the template as incomplete at the first hurdle; However, if the missing 
+   files are behind an authentication or acess restrictions that you cannot satisfy just emit the block promisse.
+   - A usable template package normally includes, at a minimum, the required .cls and/or .sty files, or even an 
+     additional .bst file when the venue mandates a particular bibliography/references style. A sample .tex is 
+     useful but not part of the bare minimum; if the very least minimum required files are indeed available 
+     while no sample .tex file is provided, create a minimal main.tex.
 
 > **CAUTION!**: If the template is behind a login or otherwise requires account authentication, do not attempt to access 
 it or look for another way to obtain it. Instead, immediately write conversion-status.md, emit {BLOCKED_PROMISE}, 
