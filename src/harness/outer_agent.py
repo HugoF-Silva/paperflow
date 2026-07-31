@@ -8,6 +8,7 @@ from datetime import datetime, timezone
 import os
 import pathlib
 import re
+import shlex
 import shutil
 import subprocess
 import sys
@@ -51,10 +52,19 @@ _LOG_POLL_RESULT_LIMIT = 4_000
 _MAX_LOGGED_TOOL_LINE_CHARS = 1_000
 _AGENT_LOG_REFERENCES = ("_execution.log", "_progress.log", "vm.out")
 _AGENT_LOG_LINE_PREFIXES = ("[venue-matcher] ", "[converter] ", "[paperflow] ")
-_SECRET_ASSIGNMENT_RE = re.compile(
-    r'''((?:OPENAI|ANTHROPIC)_API_KEY=)(?:"[^"]*"|'[^']*'|\S+)'''
-)
 _OPENAI_KEY_RE = re.compile(r"sk-[A-Za-z0-9_\-*]+")
+_SHELL_VALUE = r'''(?:\\.|'[^']*'|"(?:\\.|[^"])*"|\$\([^)]*\)|[^\s;&|()<>])*'''
+_DIRECT_ASSIGNMENT_RUN_RE = re.compile(
+    rf"(?:^|\n|;|&&|\|\||[&|()])[ \t]*"
+    rf"(?:(?:export|declare[ \t]+-x|(?:exec[ \t]+)?env)[ \t]+)?"
+    rf"(?:[A-Za-z_][A-Za-z0-9_]*={_SHELL_VALUE}(?:[ \t]+|(?=$|[\n;&|()])))+",
+)
+_OPENAI_ASSIGNMENT_RE = re.compile(
+    rf"(?<![^\s;&|()])OPENAI_API_KEY={_SHELL_VALUE}"
+)
+_SECRET_ASSIGNMENT_RE = re.compile(
+    rf"((?:OPENAI|ANTHROPIC)_API_KEY=){_SHELL_VALUE}"
+)
 
 
 def _set_process_nondumpable(*, platform=sys.platform, prctl=None) -> None:
@@ -74,6 +84,21 @@ def _set_process_nondumpable(*, platform=sys.platform, prctl=None) -> None:
 def _format_api_key_value_lines(api_keys: dict[str, str]) -> str:
     values = tuple(value for value in api_keys.values() if value)
     return "\n".join(f"- API key value: {value}" for value in values)
+
+
+def _normalize_openai_api_key_assignments(
+    command: str, authoritative_key: str
+) -> tuple[str, int]:
+    assignment_count = 0
+    replacement = f"OPENAI_API_KEY={shlex.quote(authoritative_key)}"
+
+    def replace_assignments(match: re.Match) -> str:
+        nonlocal assignment_count
+        replaced, count = _OPENAI_ASSIGNMENT_RE.subn(replacement, match.group(0))
+        assignment_count += count
+        return replaced
+
+    return _DIRECT_ASSIGNMENT_RUN_RE.sub(replace_assignments, command), assignment_count
 
 
 def _outer_execution_guidance(_api_key_names=None) -> str:
@@ -409,6 +434,12 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
         """Run a shell command from the repository root and return stdout/stderr."""
         matcher_command = "venue_matcher/cli.py" in command
         converter_command = "converter/cli.py" in command
+        authoritative_openai_key = tool_env.get("OPENAI_API_KEY")
+        assignment_count = 0
+        if authoritative_openai_key:
+            command, assignment_count = _normalize_openai_api_key_assignments(
+                command, authoritative_openai_key
+            )
         timeout = (
             None
             if matcher_command or converter_command
@@ -420,6 +451,25 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
             f"tool=run_shell start timeout={'none' if timeout is None else str(timeout) + 's'} "
             f"command={_safe_log_text(command, limit=None, secrets=secrets)}"
         )
+        if authoritative_openai_key and (matcher_command or converter_command):
+            if assignment_count != 1:
+                if matcher_command:
+                    state["matcher_exit_code"] = 2
+                if converter_command:
+                    state["converter_exit_code"] = 2
+                message = (
+                    "credential launch refused before process creation: expected exactly one "
+                    f"OPENAI_API_KEY assignment; found {assignment_count}. The harness has an "
+                    "authoritative preloaded credential and will supply it; do not print or "
+                    "reproduce the credential."
+                )
+                log_status(f"tool=run_shell refused {message}")
+                return f"exit_code=2\n{message}"
+        if assignment_count:
+            log_status(
+                "tool=run_shell credential_assignments_normalized="
+                f"{assignment_count} source=tool_env"
+            )
         output_lines: list[str] = []
         omitted_logged_agent_lines = 0
 
@@ -495,6 +545,11 @@ def build_openai_tools(cwd: pathlib.Path, state: dict | None = None):
             f"exit_code={returncode} stdout_chars={len(output)} stderr_chars=0"
         )
         chunks = [f"exit_code={returncode}"]
+        if assignment_count:
+            chunks.append(
+                "credential_notice=harness supplied the authoritative preloaded "
+                "OPENAI_API_KEY; submitted assignment value was not used"
+            )
         if output:
             chunks.append("stdout:\n" + output)
         return _truncate("\n".join(chunks), _log_poll_limit(log_poll))
